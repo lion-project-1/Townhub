@@ -33,5 +33,15 @@ public class QuestionController {
         return ResponseEntity.ok(ApiResponse.success("질문이 수정되었습니다."));
     }
 
+    @DeleteMapping("/{questionId}")
+    public ResponseEntity<ApiResponse<Void>> deleteQuestion(
+            @PathVariable Long questionId
+            //@AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long tmpUserId = 1L;
+
+        questionService.deleteQuestion(questionId, tmpUserId);
+        return ResponseEntity.ok(ApiResponse.success("질문이 삭제되었습니다."));
+    }
 }
 
