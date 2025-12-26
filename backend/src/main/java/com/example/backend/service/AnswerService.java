@@ -7,6 +7,7 @@ import com.example.backend.domain.Answer;
 import com.example.backend.domain.Question;
 import com.example.backend.domain.User;
 import com.example.backend.dto.AnswerCreateRequest;
+import com.example.backend.dto.AnswerUpdateRequest;
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
 import com.example.backend.repository.AnswerRepository;
@@ -38,5 +39,18 @@ public class AnswerService {
 			.build();
 
 		answerRepository.save(answer);
+	}
+
+	@Transactional
+	public void updateAnswer(Long questionId, Long answerId, Long userId, AnswerUpdateRequest request) {
+
+		Answer answer = answerRepository.findByIdAndQuestionId(answerId, questionId)
+			.orElseThrow(() -> new CustomException(ErrorCode.ANSWER_NOT_FOUND));
+
+		if (!answer.getUser().getId().equals(userId)) {
+			throw new CustomException(ErrorCode.ANSWER_UPDATE_FORBIDDEN);
+		}
+
+		answer.update(request.getContent());
 	}
 }
