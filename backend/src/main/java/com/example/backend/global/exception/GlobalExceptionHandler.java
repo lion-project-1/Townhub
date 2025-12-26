@@ -1,8 +1,8 @@
-package com.example.backend.exception;
+package com.example.backend.global.exception;
 
 
-import com.example.backend.exception.custom.CustomException;
-import com.example.backend.exception.custom.ErrorCode;
+import com.example.backend.global.exception.custom.CustomException;
+import com.example.backend.global.exception.custom.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<ErrorResponse> handleCommentNotFoundException(CustomException e) {
+    public ResponseEntity<ErrorResponse> handleCustomException(CustomException e) {
 
         ErrorCode errorCode = e.getErrorCode();
         log.error("CustomException 발생: {}", errorCode.getMessage());
