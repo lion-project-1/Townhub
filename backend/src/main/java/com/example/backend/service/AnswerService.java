@@ -42,9 +42,8 @@ public class AnswerService {
 	}
 
 	@Transactional
-	public void updateAnswer(Long questionId, Long answerId, Long userId, AnswerUpdateRequest request) {
-
-		Answer answer = answerRepository.findByIdAndQuestionId(answerId, questionId)
+	public void updateAnswer(Long answerId, Long userId, AnswerUpdateRequest request) {
+		Answer answer = answerRepository.findById(answerId)
 			.orElseThrow(() -> new CustomException(ErrorCode.ANSWER_NOT_FOUND));
 
 		if (!answer.getUser().getId().equals(userId)) {
