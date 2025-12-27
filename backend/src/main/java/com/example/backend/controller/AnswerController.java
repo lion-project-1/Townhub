@@ -1,7 +1,10 @@
 package com.example.backend.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -10,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.backend.dto.AnswerCreateRequest;
+import com.example.backend.dto.AnswerResponse;
 import com.example.backend.dto.AnswerUpdateRequest;
 import com.example.backend.global.response.ApiResponse;
 import com.example.backend.service.AnswerService;
@@ -32,6 +36,14 @@ public class AnswerController {
 		Long tmpUserId = 1L;
 		answerService.createAnswer(questionId, tmpUserId, request);
 		return ResponseEntity.ok(ApiResponse.success("답변이 등록되었습니다."));
+	}
+	
+	@GetMapping("/questions/{questionId}/answers")
+	public ResponseEntity<ApiResponse<List<AnswerResponse>>> getAnswers(
+		@PathVariable Long questionId
+	) {
+		List<AnswerResponse> response = answerService.getAnswers(questionId);
+		return ResponseEntity.ok(ApiResponse.success("답변 목록 조회 성공", response));
 	}
 
 	@PatchMapping("/answers/{answerId}")

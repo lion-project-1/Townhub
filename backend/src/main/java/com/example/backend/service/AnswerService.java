@@ -1,5 +1,7 @@
 package com.example.backend.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -7,6 +9,7 @@ import com.example.backend.domain.Answer;
 import com.example.backend.domain.Question;
 import com.example.backend.domain.User;
 import com.example.backend.dto.AnswerCreateRequest;
+import com.example.backend.dto.AnswerResponse;
 import com.example.backend.dto.AnswerUpdateRequest;
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
@@ -39,6 +42,17 @@ public class AnswerService {
 			.build();
 
 		answerRepository.save(answer);
+	}
+
+	public List<AnswerResponse> getAnswers(Long questionId) {
+		if (!questionRepository.existsById(questionId)) {
+			throw new CustomException(ErrorCode.QUESTION_NOT_FOUND);
+		}
+
+		return answerRepository.findAllByQuestionIdWithUser(questionId)
+			.stream()
+			.map(AnswerResponse::fromEntity)
+			.toList();
 	}
 
 	@Transactional
