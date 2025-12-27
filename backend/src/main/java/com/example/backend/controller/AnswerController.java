@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,5 +43,15 @@ public class AnswerController {
 		Long tmpUserId = 1L;
 		answerService.updateAnswer(answerId, tmpUserId, request);
 		return ResponseEntity.ok(ApiResponse.success("답변이 수정되었습니다."));
+	}
+
+	@DeleteMapping("/answers/{answerId}")
+	public ResponseEntity<ApiResponse<Void>> deleteAnswer(
+		// @AuthenticationPrincipal Long userId,
+		@PathVariable("answerId") Long answerId
+	) {
+		Long tmpUserId = 1L;
+		answerService.deleteAnswer(answerId, tmpUserId);
+		return ResponseEntity.ok(ApiResponse.success("답변이 삭제되었습니다."));
 	}
 }

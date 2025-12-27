@@ -52,4 +52,16 @@ public class AnswerService {
 
 		answer.update(request.getContent());
 	}
+
+	@Transactional
+	public void deleteAnswer(Long answerId, Long userId) {
+		Answer answer = answerRepository.findById(answerId)
+			.orElseThrow(() -> new CustomException(ErrorCode.ANSWER_NOT_FOUND));
+
+		if (!answer.getUser().getId().equals(userId)) {
+			throw new CustomException(ErrorCode.ANSWER_DELETE_FORBIDDEN);
+		}
+
+		answerRepository.delete(answer);
+	}
 }
