@@ -5,6 +5,7 @@ import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import com.example.backend.global.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -16,6 +17,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ErrorResponse> handleCustomException(CustomException e) {
+//     public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
 
         ErrorCode errorCode = e.getErrorCode();
         log.error("CustomException 발생: {}", errorCode.getMessage());
