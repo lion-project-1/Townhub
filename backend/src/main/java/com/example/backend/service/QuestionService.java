@@ -28,4 +28,15 @@ public class QuestionService {
         question.update(request.getQuestionCategory(), request.getTitle(), request.getContent());
     }
 
+    @Transactional
+    public void deleteQuestion(Long questionId, Long userId) {
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new CustomException(ErrorCode.QUESTION_NOT_FOUND));
+
+        // if (!question.getUser().getId().equals(userId)) {
+        //     throw new CustomException(ErrorCode.QUESTION_UPDATE_FORBIDDEN);
+        // }
+
+        questionRepository.delete(question);
+    }
 }
