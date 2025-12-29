@@ -6,6 +6,7 @@ import com.example.backend.service.QuestionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/questions")
+@CrossOrigin("*")
 public class QuestionController {
 
     private final QuestionService questionService;
@@ -33,5 +35,15 @@ public class QuestionController {
         return ResponseEntity.ok(ApiResponse.success("질문이 수정되었습니다."));
     }
 
+    @DeleteMapping("/{questionId}")
+    public ResponseEntity<ApiResponse<Void>> deleteQuestion(
+            @PathVariable Long questionId
+            //@AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long tmpUserId = 1L;
+
+        questionService.deleteQuestion(questionId, tmpUserId);
+        return ResponseEntity.ok(ApiResponse.success("질문이 삭제되었습니다."));
+    }
 }
 

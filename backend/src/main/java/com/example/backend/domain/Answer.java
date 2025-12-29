@@ -1,5 +1,7 @@
 package com.example.backend.domain;
 
+import org.hibernate.annotations.ColumnDefault;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -14,7 +16,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 
 @Getter
 @Setter
@@ -23,23 +24,33 @@ import org.hibernate.annotations.ColumnDefault;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Answer extends BaseEntity{
+public class Answer extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private String content;
+	private String content;
 
-    @Column(nullable = false)
-    @ColumnDefault("false")
-    private boolean isAccepted = false;
+	@Column(nullable = false)
+	@ColumnDefault("false")
+	private boolean isAccepted = false;
 
-    @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name = "question_id")
-    private Question question;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "question_id")
+	private Question question;
 
-    @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id")
+	private User user;
+
+	public void update(String content) {
+		if (hasText(content)) {
+			this.content = content;
+		}
+	}
+
+	private boolean hasText(String value) {
+		return value != null && !value.isBlank();
+	}
 }
