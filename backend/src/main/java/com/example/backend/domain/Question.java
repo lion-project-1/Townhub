@@ -26,7 +26,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Question extends BaseEntity{
+public class Question extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,11 +41,11 @@ public class Question extends BaseEntity{
     @Column(name = "question_category", nullable = false)
     private QuestionCategory questionCategory;
 
-    @ManyToOne(fetch= FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id")
     private Location location;
 
-    @ManyToOne(fetch= FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 

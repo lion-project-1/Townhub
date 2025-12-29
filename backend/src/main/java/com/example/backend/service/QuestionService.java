@@ -1,12 +1,12 @@
 package com.example.backend.service;
 
+
 import com.example.backend.domain.Location;
 import com.example.backend.domain.Question;
 import com.example.backend.domain.User;
 import com.example.backend.dto.QuestionCreateRequest;
 import com.example.backend.dto.QuestionResponseRequest;
 import com.example.backend.dto.QuestionUpdateRequest;
-import com.example.backend.enums.QuestionCategory;
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
 import com.example.backend.repository.LocationRepository;
@@ -15,24 +15,19 @@ import com.example.backend.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+
 
 
 
 @Service
-@Transactional
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class QuestionService {
 
     private final QuestionRepository questionRepository;
     private final UserRepository userRepository;
     private final LocationRepository locationRepository;
-
-    public QuestionService(QuestionRepository questionRepository,
-                           UserRepository userRepository,
-                           LocationRepository locationRepository) {
-        this.questionRepository = questionRepository;
-        this.userRepository = userRepository;
-        this.locationRepository = locationRepository;
-    }
 
     // 질문 등록
     public void createQuestion(Long userId, QuestionCreateRequest request) {
@@ -77,8 +72,10 @@ public class QuestionService {
         return new QuestionResponseRequest(question);
     }
 
-    // 질문 업데이트
+
+
     @Transactional
+
     public void updateQuestion(Long questionId, Long loginUserId, QuestionUpdateRequest request) {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new CustomException(ErrorCode.QUESTION_NOT_FOUND));
@@ -88,5 +85,18 @@ public class QuestionService {
         // }
 
         question.update(request.getQuestionCategory(), request.getTitle(), request.getContent());
+    }
+
+
+    @Transactional
+    public void deleteQuestion(Long questionId, Long userId) {
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new CustomException(ErrorCode.QUESTION_NOT_FOUND));
+
+        // if (!question.getUser().getId().equals(userId)) {
+        //     throw new CustomException(ErrorCode.QUESTION_UPDATE_FORBIDDEN);
+        // }
+
+        questionRepository.delete(question);
     }
 }

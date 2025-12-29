@@ -3,8 +3,7 @@ package com.example.backend.global.exception;
 
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.example.backend.global.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -15,27 +14,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<ErrorResponse> handleCommentNotFoundException(CustomException e) {
+    public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
 
         ErrorCode errorCode = e.getErrorCode();
         log.error("CustomException 발생: {}", errorCode.getMessage());
 
         return ResponseEntity
                 .status(errorCode.getStatus())
-                .body(ErrorResponse.of(errorCode));
+                .body(ApiResponse.fail(errorCode.getCode(), errorCode.getMessage()));
     }
 
-    @Data
-    @AllArgsConstructor
-    public static class ErrorResponse {
-        private int status;
-        private String code;
-        private String message;
-        public static ErrorResponse of(ErrorCode errorCode) {
-            return new ErrorResponse(
-                    errorCode.getStatus().value(),
-                    errorCode.getCode(),
-                    errorCode.getMessage());
-        }
-    }
 }
