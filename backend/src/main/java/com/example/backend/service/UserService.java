@@ -5,6 +5,8 @@ import com.example.backend.dto.LoginRequest;
 import com.example.backend.dto.LoginResponse;
 import com.example.backend.dto.SignupRequest;
 import com.example.backend.dto.SignupResponse;
+import com.example.backend.global.exception.custom.CustomException;
+import com.example.backend.global.exception.custom.ErrorCode;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.security.jwt.JwtProvider;
 import lombok.RequiredArgsConstructor;
@@ -22,11 +24,11 @@ public class UserService {
     @Transactional
     public SignupResponse signup(SignupRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
         }
 
         if (userRepository.existsByNickname(request.getNickname())) {
-            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+            throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
         }
 
         String encodedPassword = passwordEncoder.encode(request.getPassword());
@@ -39,15 +41,13 @@ public class UserService {
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
+            throw new CustomException(ErrorCode.INVALID_LOGIN);
         }
 
-        String accessToken = jwtProvider.createAccessToken(
-                user.getId(), user.getEmail()
-        );
+        String accessToken = jwtProvider.createAccessToken(user.getId(), user.getEmail());
 
         String refreshToken = jwtProvider.createRefreshToken(user.getId());
 
