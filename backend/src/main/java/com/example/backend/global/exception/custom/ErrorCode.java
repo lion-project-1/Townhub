@@ -32,6 +32,8 @@ public enum ErrorCode {
 	ANSWER_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "ANSWER_UPDATE_FORBIDDEN", "답변 수정 권한이 없습니다."),
 	ANSWER_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "ANSWER_DELETE_FORBIDDEN", "답변 삭제 권한이 없습니다."),
 
+	// Location
+	LOCATION_NOT_FOUND(HttpStatus.NOT_FOUND, "LOCATION-001", "해당 지역이 존재하지 않습니다."),
 	;
 
 	private final HttpStatus status;
