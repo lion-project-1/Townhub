@@ -30,7 +30,7 @@ import lombok.NoArgsConstructor;
                 @UniqueConstraint(columnNames = {"meeting_id", "user_id"})
         }
 )
-public class MeetingJoinRequest {
+public class MeetingJoinRequest extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
