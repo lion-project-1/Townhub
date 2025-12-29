@@ -1,6 +1,9 @@
 package com.example.backend.domain;
 
+import com.example.backend.enums.MeetingCategory;
 import com.example.backend.enums.MeetingStatus;
+import com.example.backend.global.exception.custom.CustomException;
+import com.example.backend.global.exception.custom.ErrorCode;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,7 +31,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Table(name = "meetings")
-public class Meeting {
+public class Meeting extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,7 +44,19 @@ public class Meeting {
     private String description;
 
     @Column(nullable = false)
-    private String category;
+    private MeetingCategory category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id", nullable = false)
+    private Location location;
+
+    @Column(nullable = false)
+    private String meetingPlace;
+
+    /** 모임 일정 설명 (예: 매주 토요일 9시) */
+    @Column(nullable = false)
+    private String schedule;
+
 
     @Column(nullable = false)
     private int capacity;
@@ -50,14 +65,56 @@ public class Meeting {
     @Column(nullable = false)
     private MeetingStatus status;
 
-    /** 방장 (host) */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "host_id", nullable = false)
     private User host;
 
-    /** 모임 멤버 */
     @OneToMany(mappedBy = "meeting", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MeetingMember> members = new ArrayList<>();
+
+    public void update(
+            String title,
+            String description,
+            MeetingCategory category,
+            String meetingPlace,
+            String schedule,
+            Integer capacity) {
+
+        if (hasText(title)) {
+            this.title = title;
+        }
+
+        if (description != null) {
+            this.description = description;
+        }
+
+        if (category != null) {
+            this.category = category;
+        }
+
+        if (hasText(meetingPlace)) {
+            this.meetingPlace = meetingPlace;
+        }
+
+        if (hasText(schedule)) {
+            this.schedule = schedule;
+        }
+
+        if (capacity != null) {
+            validateCapacity(capacity);
+            this.capacity = capacity;
+        }
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private void validateCapacity(Integer capacity) {
+        if (capacity < 2 || capacity > 100) {
+            throw new CustomException(ErrorCode.INVALID_MEETING_CAPACITY);
+        }
+    }
 
 }
 
