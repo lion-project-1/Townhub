@@ -1,6 +1,5 @@
 package com.example.backend.controller;
 
-
 import com.example.backend.dto.*;
 import com.example.backend.global.response.ApiResponse;
 import com.example.backend.service.UserService;
@@ -36,4 +35,5 @@ public class UserController {
         return ResponseEntity.ok(
                 ApiResponse.success("토큰 재발급 성공", response));
     }
+
 }

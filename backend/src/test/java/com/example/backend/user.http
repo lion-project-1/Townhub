@@ -1,3 +1,8 @@
+@host = http://localhost:8080
+@accessToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0MUB0ZXN0LmNvbSIsImlhdCI6MTc2NzAyOTA1NCwiZXhwIjoxNzY3MDI5MzU0fQ.QqjLtSygoKFh-gMy_3ODYYq_yNIrlaY_PYF9IpwQDpQ
+@refreshToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzY3MDI5MDA5LCJleHAiOjE3NjcwMzA4MDl9.1SUQXbVkiZ_22CWWtXg6YXHfkvcGYFY8yxKErlAlWpE
+@newAccessToken =
+
 ### 회원가입
 POST http://localhost:8080/api/users/signup
 Content-Type: application/json
@@ -22,5 +27,15 @@ POST http://localhost:8080/api/users/token/reissue
 Content-Type: application/json
 
 {
-  "refreshToken": "Refresh 토큰 입력"
+  "refreshToken": "{{refreshToken}}"
 }
+
+### API 호출 (AccessToken 필요)
+GET {{host}}/api/test/auth
+Authorization: Bearer {{accessToken}}
+
+### API 재호출 (재발급된 AccessToken)
+GET {{host}}/api/test/auth
+Authorization: Bearer {{newAccessToken}}
+
+

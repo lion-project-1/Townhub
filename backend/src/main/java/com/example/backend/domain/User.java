@@ -24,6 +24,9 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String nickname;
 
+//    @ManyToOne(fetch= FetchType.LAZY)
+//    @JoinColumn(name = "location_id")
+//    private Location location;
 
     @Builder
     public User(String email, String password, String nickname) {

@@ -15,10 +15,7 @@ public enum ErrorCode {
 
     // AUTH
     INVALID_LOGIN(HttpStatus.UNAUTHORIZED, "AUTH_001", "이메일 또는 비밀번호가 올바르지 않습니다."),
-//    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH-002", "인증이 필요합니다."),
-//    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH-003", "유효하지 않은 토큰입니다."),
-//    EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH-004", "만료된 토큰입니다."),
-//    ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH-005", "접근 권한이 없습니다."),
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_002", "접근 권한이 없습니다."),
 
     // USER
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USER_001", "이미 사용 중인 이메일입니다."),
@@ -29,6 +26,7 @@ public enum ErrorCode {
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "TOKEN_001", "토큰이 만료되었습니다."),
     TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "TOKEN_002", "유효하지 않은 토큰입니다."),
     TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "TOKEN_003", "토큰이 존재하지 않습니다."),
+    TOKEN_INTERNAL(HttpStatus.UNAUTHORIZED, "TOKEN_004", "토큰 필터 내부 문제"), // test 용
 
     // QUESTION
     QUESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "QUESTION-001", "존재하지 않는 질문입니다."),
