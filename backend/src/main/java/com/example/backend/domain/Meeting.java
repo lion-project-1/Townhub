@@ -2,6 +2,8 @@ package com.example.backend.domain;
 
 import com.example.backend.enums.MeetingCategory;
 import com.example.backend.enums.MeetingStatus;
+import com.example.backend.global.exception.custom.CustomException;
+import com.example.backend.global.exception.custom.ErrorCode;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -69,6 +71,50 @@ public class Meeting extends BaseEntity{
 
     @OneToMany(mappedBy = "meeting", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MeetingMember> members = new ArrayList<>();
+
+    public void update(
+            String title,
+            String description,
+            MeetingCategory category,
+            String meetingPlace,
+            String schedule,
+            Integer capacity) {
+
+        if (hasText(title)) {
+            this.title = title;
+        }
+
+        if (description != null) {
+            this.description = description;
+        }
+
+        if (category != null) {
+            this.category = category;
+        }
+
+        if (hasText(meetingPlace)) {
+            this.meetingPlace = meetingPlace;
+        }
+
+        if (hasText(schedule)) {
+            this.schedule = schedule;
+        }
+
+        if (capacity != null) {
+            validateCapacity(capacity);
+            this.capacity = capacity;
+        }
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private void validateCapacity(Integer capacity) {
+        if (capacity < 2 || capacity > 100) {
+            throw new CustomException(ErrorCode.INVALID_MEETING_CAPACITY);
+        }
+    }
 
 }
 
