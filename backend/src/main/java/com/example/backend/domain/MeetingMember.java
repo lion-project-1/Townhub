@@ -30,7 +30,7 @@ import lombok.NoArgsConstructor;
                 @UniqueConstraint(columnNames = {"meeting_id", "user_id"})
         }
 )
-public class MeetingMember {
+public class MeetingMember extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,4 +47,17 @@ public class MeetingMember {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MeetingMemberRole role;
+
+    protected MeetingMember(Meeting meeting, User user, MeetingMemberRole role) {
+        this.meeting = meeting;
+        this.user = user;
+        this.role = role;
+    }
+    public static MeetingMember createHost(Meeting meeting, User user) {
+        return new MeetingMember(meeting, user, MeetingMemberRole.HOST);
+    }
+
+    public static MeetingMember createMember(Meeting meeting, User user) {
+        return new MeetingMember(meeting, user, MeetingMemberRole.MEMBER);
+    }
 }
