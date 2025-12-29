@@ -1,10 +1,12 @@
 package com.example.backend.service;
 
 import com.example.backend.domain.RefreshToken;
+import com.example.backend.domain.Location;
 import com.example.backend.domain.User;
 import com.example.backend.dto.*;
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
+import com.example.backend.repository.LocationRepository;
 import com.example.backend.repository.RefreshTokenRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.security.jwt.JwtProvider;
@@ -20,6 +22,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final LocationRepository locationRepository;
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
@@ -32,7 +35,17 @@ public class UserService {
         }
 
         String encodedPassword = passwordEncoder.encode(request.getPassword());
-        User user = request.toEntity(encodedPassword);
+        Location location = locationRepository.findByProvinceAndCityAndTown(
+                request.getProvince(),
+                request.getCity(),
+                request.getTown()
+        ).orElseGet(() -> locationRepository.save(Location.builder()
+                .province(request.getProvince())
+                .city(request.getCity())
+                .town(request.getTown())
+                .build()));
+
+        User user = request.toEntity(encodedPassword, location);
 
         User savedUser = userRepository.save(user);
         return SignupResponse.from(savedUser);

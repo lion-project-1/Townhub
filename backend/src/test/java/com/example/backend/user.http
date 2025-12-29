@@ -1,6 +1,6 @@
 @host = http://localhost:8080
-@accessToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0MUB0ZXN0LmNvbSIsImlhdCI6MTc2NzAyOTA1NCwiZXhwIjoxNzY3MDI5MzU0fQ.QqjLtSygoKFh-gMy_3ODYYq_yNIrlaY_PYF9IpwQDpQ
-@refreshToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzY3MDI5MDA5LCJleHAiOjE3NjcwMzA4MDl9.1SUQXbVkiZ_22CWWtXg6YXHfkvcGYFY8yxKErlAlWpE
+@accessToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0MUB0ZXN0LmNvbSIsImlhdCI6MTc2NzA0NDI1OCwiZXhwIjoxNzY3MDQ0NTU4fQ.EBOQZnLsLRhSiAt05_tQpEDg4BXVq8If8BiF2HwM-7s
+@refreshToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzY3MDQ0MjMxLCJleHAiOjE3NjcwNDYwMzF9.jmMwA8QusMXr0tF4xFruvpDzpEMEuA_hXfETSXdFh8A
 @newAccessToken =
 
 ### 회원가입
@@ -8,9 +8,12 @@ POST http://localhost:8080/api/users/signup
 Content-Type: application/json
 
 {
-  "email": "test3@test.com",
+  "email": "test1@test.com",
   "password": "1234",
-  "nickname": "테스트유저3"
+  "nickname": "테스트유저1",
+  "province": "서울시",
+  "city": "강남구",
+  "town": "신사동"
 }
 
 ### 로그인
