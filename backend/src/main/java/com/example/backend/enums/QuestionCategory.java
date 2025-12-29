@@ -10,8 +10,4 @@ public enum QuestionCategory {
     HOUSING,      // 부동산, 월세, 전세, 관리비
     ETC           // 기타 / 분류 불가
 
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> b111a78dc32b6bb1b4b1ae58f4ac23db554395ed
