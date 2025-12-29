@@ -2,6 +2,7 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.MeetingCreateRequest;
 import com.example.backend.dto.MeetingCreateResponse;
+import com.example.backend.dto.MeetingDetailResponse;
 import com.example.backend.dto.MeetingUpdateRequest;
 import com.example.backend.enums.MeetingStatus;
 import com.example.backend.global.response.ApiResponse;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,8 +46,14 @@ public class MeetingController {
     // TODO: 모임 목록 조회 API
     // @GetMapping
 
-    // TODO: 모임 상세 조회 API
-    // @GetMapping("/{meetingId}")
+    @GetMapping("/{meetingId}")
+    public ResponseEntity<ApiResponse<MeetingDetailResponse>> getMeetingDetail(
+            @PathVariable Long meetingId) {
+
+        MeetingDetailResponse response = meetingService.getMeetingDetail(meetingId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 
     @PatchMapping("/{meetingId}")
     public ResponseEntity<ApiResponse<Void>> updateMeeting(
