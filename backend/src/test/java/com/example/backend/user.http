@@ -1,6 +1,6 @@
 @host = http://localhost:8080
-@accessToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0MUB0ZXN0LmNvbSIsImlhdCI6MTc2NzA0NDI1OCwiZXhwIjoxNzY3MDQ0NTU4fQ.EBOQZnLsLRhSiAt05_tQpEDg4BXVq8If8BiF2HwM-7s
-@refreshToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzY3MDQ0MjMxLCJleHAiOjE3NjcwNDYwMzF9.jmMwA8QusMXr0tF4xFruvpDzpEMEuA_hXfETSXdFh8A
+@accessToken =
+@refreshToken =
 @newAccessToken =
 
 ### 회원가입
