@@ -1,65 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { MessageCircle, Search, Plus, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { getQuestions } from 'src/app/api/questions';
 
 const CATEGORIES = ['전체', '맛집', '교통', '생활', '의료', '교육', '기타'];
 const SORT_OPTIONS = ['최신순', '인기순', '미해결'];
-
-const MOCK_QUESTIONS = [
-  {
-    id: 1,
-    title: '이 근처 맛있는 한식당 추천해주세요',
-    content: '가족 모임을 위해 괜찮은 한식당을 찾고 있습니다.',
-    author: '김민수',
-    category: '맛집',
-    answers: 5,
-    views: 124,
-    isResolved: true,
-    createdAt: '10분 전',
-  },
-  {
-    id: 2,
-    title: '반려동물 동반 가능한 카페 있나요?',
-    content: '강아지와 함께 갈 수 있는 카페를 찾고 있어요.',
-    author: '박지영',
-    category: '생활',
-    answers: 3,
-    views: 89,
-    isResolved: false,
-    createdAt: '1시간 전',
-  },
-  {
-    id: 3,
-    title: '주차하기 좋은 공영 주차장 위치 알려주세요',
-    content: '처음 이사왔는데 주차가 어려워서요.',
-    author: '이철수',
-    category: '교통',
-    answers: 8,
-    views: 256,
-    isResolved: true,
-    createdAt: '2시간 전',
-  },
-  {
-    id: 4,
-    title: '소아과 추천 부탁드립니다',
-    content: '아이가 어려서 믿을 만한 소아과를 찾고 있습니다.',
-    author: '최영희',
-    category: '의료',
-    answers: 12,
-    views: 342,
-    isResolved: true,
-    createdAt: '5시간 전',
-  },
-];
 
 export default function QnaListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [sortBy, setSortBy] = useState('최신순');
 
-  let filteredQuestions = MOCK_QUESTIONS.filter((question) => {
+  const [questions, setQuestions] = useState([]); // API 데이터 상태
+  const [loading, setLoading] = useState(true);
+
+  // 페이지 로딩 시 질문 리스트 가져오기
+  useEffect(() => {
+     async function fetchQuestions() {
+         try {
+             const data = await getQuestions();
+             setQuestions(data);
+         } catch (err) {
+                console.error(err);
+         } finally {
+             setLoading(false);
+         }
+     }
+     fetchQuestions();
+  }, []);
+
+
+  let filteredQuestions = questions.filter((question) => {
     const matchesSearch =
       question.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       question.content.toLowerCase().includes(searchQuery.toLowerCase());
@@ -72,6 +45,11 @@ export default function QnaListPage() {
   } else if (sortBy === '미해결') {
     filteredQuestions = filteredQuestions.filter((q) => !q.isResolved);
   }
+
+  if (loading) {
+     return <div className="text-center py-20">로딩 중...</div>;
+  }
+
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50">

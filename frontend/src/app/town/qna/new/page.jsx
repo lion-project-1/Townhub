@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save } from 'lucide-react';
+import { createQuestion } from "src/app/api/questions";
+import { getCategories } from "src/app/api/categories";
 
 const CATEGORIES = ['맛집', '교통', '생활', '의료', '교육', '기타'];
 
@@ -14,6 +16,21 @@ export default function QnaNewPage() {
     content: '',
   });
 
+    const [categories, setCategories] = useState([]); // ← 카테고리 상태 추가
+
+    // 페이지 로딩 시 카테고리 가져오기
+    useEffect(() => {
+        async function fetchCategories() {
+            try {
+                const data = await getCategories();
+                setCategories(data);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        fetchCategories();
+    }, []);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -21,9 +38,18 @@ export default function QnaNewPage() {
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    router.push('/town/qna/1');
+  const handleSubmit = async (e) => {
+      e.preventDefault();
+
+      try {
+          // const token = "로그인토큰있으면여기"; // 실제 로그인 토큰 사용
+          const result = await createQuestion(formData, token);
+          console.log(result); // 등록된 질문 확인
+          router.push(`/town/qna/${result.id}`); // 상세페이지 이동
+      } catch (error) {
+          console.error(error);
+          alert("질문 등록 중 오류가 발생했습니다.");
+      }
   };
 
   return (
