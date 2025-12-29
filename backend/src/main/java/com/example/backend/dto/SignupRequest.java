@@ -2,7 +2,6 @@ package com.example.backend.dto;
 
 
 import com.example.backend.domain.User;
-import com.example.backend.enums.UserRole;
 import lombok.Getter;
 
 @Getter
@@ -16,7 +15,6 @@ public class SignupRequest {
                 .email(this.email)
                 .nickname(this.nickname)
                 .password(encodedPassword)
-                .role(UserRole.COMMENTER)
                 .build();
     }
 }
