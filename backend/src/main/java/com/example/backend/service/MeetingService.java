@@ -5,6 +5,8 @@ import com.example.backend.domain.Meeting;
 import com.example.backend.domain.MeetingMember;
 import com.example.backend.domain.User;
 import com.example.backend.dto.MeetingCreateRequest;
+import com.example.backend.dto.MeetingUpdateRequest;
+import com.example.backend.enums.MeetingMemberRole;
 import com.example.backend.enums.MeetingStatus;
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
@@ -47,21 +49,48 @@ public class MeetingService {
         return meeting.getId();
     }
 
+    @Transactional
+    public void updateMeeting(
+            Long meetingId,
+            Long userId,
+            MeetingUpdateRequest request) {
+
+        Meeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
+
+        validateHost(meetingId, userId);
+
+        meeting.update(
+                request.getTitle(),
+                request.getDescription(),
+                request.getCategory(),
+                request.getMeetingPlace(),
+                request.getSchedule(),
+                request.getCapacity()
+        );
+    }
+
     private static Meeting getMeeting(MeetingCreateRequest request, Location location, User host) {
         return Meeting.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .category(request.getCategory())
-                .location(location)
                 .meetingPlace(request.getMeetingPlace())
                 .schedule(request.getSchedule())
                 .capacity(request.getCapacity())
                 .status(MeetingStatus.RECRUITING)
                 .host(host)
+                .location(location)
                 .build();
+    }
+
+    private void validateHost(Long meetingId, Long userId) {
+        if (!meetingMemberRepository.existsByMeetingIdAndUserIdAndRole(
+                meetingId, userId, MeetingMemberRole.HOST)) {
+            throw new CustomException(ErrorCode.MEETING_HOST_ONLY);
+        }
     }
 
     // TODO: 모임 목록 조회
     // TODO: 모임 상세 조회
-    // TODO: 모임 수정
 }
