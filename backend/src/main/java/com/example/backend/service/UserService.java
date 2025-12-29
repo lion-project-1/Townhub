@@ -1,12 +1,11 @@
 package com.example.backend.service;
 
+import com.example.backend.domain.RefreshToken;
 import com.example.backend.domain.User;
-import com.example.backend.dto.LoginRequest;
-import com.example.backend.dto.LoginResponse;
-import com.example.backend.dto.SignupRequest;
-import com.example.backend.dto.SignupResponse;
+import com.example.backend.dto.*;
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
+import com.example.backend.repository.RefreshTokenRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.security.jwt.JwtProvider;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +19,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
@@ -38,7 +38,7 @@ public class UserService {
         return SignupResponse.from(savedUser);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN));
@@ -47,16 +47,48 @@ public class UserService {
             throw new CustomException(ErrorCode.INVALID_LOGIN);
         }
 
-        String accessToken = jwtProvider.createAccessToken(user.getId(), user.getEmail());
+        refreshTokenRepository.deleteByUserId(user.getId()); // 기존 RefreshToken 제거
 
+        String accessToken = jwtProvider.createAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtProvider.createRefreshToken(user.getId());
 
-        return new LoginResponse(
+        RefreshToken refreshTokenEntity = RefreshToken.builder()
+                .token(refreshToken)
+                .userId(user.getId())
+                .expiredAt(jwtProvider.getRefreshTokenExpiredAt())
+                .build();
+
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        return LoginResponse.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public TokenReissueResponse reissue(TokenReissueRequest request) {
+
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(request.getRefreshToken())
+                .orElseThrow(() -> new CustomException(ErrorCode.TOKEN_INVALID));
+
+        if (refreshToken.isExpired()) {
+            throw new CustomException(ErrorCode.TOKEN_EXPIRED);
+        }
+
+        User user = userRepository.findById(refreshToken.getUserId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        String newAccessToken = jwtProvider.createAccessToken(
                 user.getId(),
-                user.getEmail(),
-                user.getNickname(),
-                accessToken,
-                refreshToken
+                user.getEmail()
         );
+
+        return TokenReissueResponse.builder()
+                .accessToken(newAccessToken)
+                .build();
     }
 }

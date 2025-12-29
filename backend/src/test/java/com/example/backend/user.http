@@ -16,3 +16,11 @@ Content-Type: application/json
   "email": "test1@test.com",
   "password": "1234"
 }
+
+### AccessToken 재발급
+POST http://localhost:8080/api/users/token/reissue
+Content-Type: application/json
+
+{
+  "refreshToken": "Refresh 토큰 입력"
+}

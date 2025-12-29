@@ -1,10 +1,7 @@
 package com.example.backend.controller;
 
 
-import com.example.backend.dto.LoginRequest;
-import com.example.backend.dto.LoginResponse;
-import com.example.backend.dto.SignupRequest;
-import com.example.backend.dto.SignupResponse;
+import com.example.backend.dto.*;
 import com.example.backend.global.response.ApiResponse;
 import com.example.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -31,5 +28,12 @@ public class UserController {
         LoginResponse response = userService.login(request);
         return ResponseEntity.ok(
                 ApiResponse.success("로그인 성공", response));
+    }
+
+    @PostMapping("/token/reissue")
+    public ResponseEntity<ApiResponse<TokenReissueResponse>> reissue(@RequestBody TokenReissueRequest request) {
+        TokenReissueResponse response = userService.reissue(request);
+        return ResponseEntity.ok(
+                ApiResponse.success("토큰 재발급 성공", response));
     }
 }
