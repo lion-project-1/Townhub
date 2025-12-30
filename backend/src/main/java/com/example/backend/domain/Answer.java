@@ -50,6 +50,14 @@ public class Answer extends BaseEntity {
 		}
 	}
 
+	public void accept() {
+		this.isAccepted = true;
+	}
+
+	public void unaccept() {
+		this.isAccepted = false;
+	}
+
 	private boolean hasText(String value) {
 		return value != null && !value.isBlank();
 	}
