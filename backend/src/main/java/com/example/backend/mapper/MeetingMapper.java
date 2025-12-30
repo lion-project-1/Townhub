@@ -22,7 +22,7 @@ public class MeetingMapper {
                 .category(meeting.getCategory())
                 .province(meeting.getLocation().getProvince())
                 .city(meeting.getLocation().getCity())
-                .town(meeting.getLocation().getTown())
+                // .town(meeting.getLocation().getTown())
                 .meetingPlace(meeting.getMeetingPlace())
                 .schedule(meeting.getSchedule())
                 .capacity(meeting.getCapacity())
