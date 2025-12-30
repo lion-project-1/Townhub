@@ -1,20 +1,29 @@
 package com.example.backend.service;
 
+import static com.example.backend.mapper.MeetingMapper.toMeeting;
+import static com.example.backend.mapper.MeetingMapper.toMeetingDetailResponse;
+import static com.example.backend.mapper.MeetingMapper.toMeetingMemberResponse;
+
+import com.example.backend.common.annotation.MeasureTime;
 import com.example.backend.domain.Location;
 import com.example.backend.domain.Meeting;
 import com.example.backend.domain.MeetingMember;
 import com.example.backend.domain.User;
 import com.example.backend.dto.MeetingCreateRequest;
+import com.example.backend.dto.MeetingDetailResponse;
+import com.example.backend.dto.MeetingMemberResponse;
 import com.example.backend.dto.MeetingUpdateRequest;
 import com.example.backend.enums.MeetingMemberRole;
 import com.example.backend.enums.MeetingStatus;
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
+import com.example.backend.mapper.MeetingMapper;
 import com.example.backend.repository.LocationRepository;
 import com.example.backend.repository.MeetingJoinRequestRepository;
 import com.example.backend.repository.MeetingMemberRepository;
 import com.example.backend.repository.MeetingRepository;
 import com.example.backend.repository.UserRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,8 +48,7 @@ public class MeetingService {
         Location location = locationRepository.findById(request.getLocationId())
                 .orElseThrow(() -> new CustomException(ErrorCode.LOCATION_NOT_FOUND));
 
-        Meeting meeting = getMeeting(request, location, host);
-
+        Meeting meeting = toMeeting(request, location, host);
         meetingRepository.save(meeting);
 
         MeetingMember hostMember = MeetingMember.createHost(meeting, host);
@@ -70,18 +78,18 @@ public class MeetingService {
         );
     }
 
-    private static Meeting getMeeting(MeetingCreateRequest request, Location location, User host) {
-        return Meeting.builder()
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .category(request.getCategory())
-                .meetingPlace(request.getMeetingPlace())
-                .schedule(request.getSchedule())
-                .capacity(request.getCapacity())
-                .status(MeetingStatus.RECRUITING)
-                .host(host)
-                .location(location)
-                .build();
+    @Transactional(readOnly = true)
+    public MeetingDetailResponse getMeetingDetail(Long meetingId) {
+
+        Meeting meeting = meetingRepository.findDetailWithMembersById(meetingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
+
+        List<MeetingMemberResponse> members = meeting.getMembers().stream()
+                .map(MeetingMapper::toMeetingMemberResponse)
+                .toList();
+
+        return toMeetingDetailResponse(meeting, members);
+
     }
 
     private void validateHost(Long meetingId, Long userId) {
@@ -90,4 +98,6 @@ public class MeetingService {
             throw new CustomException(ErrorCode.MEETING_HOST_ONLY);
         }
     }
+
+    // TODO: 모임 목록 조회
 }
