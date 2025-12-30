@@ -51,8 +51,8 @@ public class MeetingQueryRepositoryImpl implements MeetingQueryRepository {
                         statusEq(condition.getStatus()),
                         keywordContains(condition.getKeyword()),
                         provinceEq(condition.getProvince()),
-                        cityEq(condition.getCity()),
-                        townEq(condition.getTown())
+                        cityEq(condition.getCity())
+                        // townEq(condition.getTown())
                 )
                 .groupBy(meeting.id, location.id)
                 .offset(pageable.getOffset())
@@ -69,8 +69,8 @@ public class MeetingQueryRepositoryImpl implements MeetingQueryRepository {
                         statusEq(condition.getStatus()),
                         keywordContains(condition.getKeyword()),
                         provinceEq(condition.getProvince()),
-                        cityEq(condition.getCity()),
-                        townEq(condition.getTown())
+                        cityEq(condition.getCity())
+                        // townEq(condition.getTown())
                 )
                 .fetchOne();
 
@@ -106,9 +106,9 @@ public class MeetingQueryRepositoryImpl implements MeetingQueryRepository {
                 : QLocation.location.city.eq(city);
     }
 
-    private BooleanExpression townEq(String town) {
-        return (town == null || town.isBlank())
-                ? null
-                : QLocation.location.town.eq(town);
-    }
+    // private BooleanExpression townEq(String town) {
+    //     return (town == null || town.isBlank())
+    //             ? null
+    //             : QLocation.location.town.eq(town);
+    // }
 }
