@@ -86,6 +86,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // 검증
     private Authentication getAuthentication(String token) {
+        // 만료 없는 토큰 (환경변수로 설정한 userId 값으로 인증)
+        if (jwtProvider.isMasterToken(token)) {
+            Long masterUserId = jwtProvider.getMasterUserIdOrThrow();
+            User masterUser = userRepository.findById(masterUserId)
+                    .orElseThrow(() -> new JwtSecurityException(ErrorCode.USER_NOT_FOUND));
+
+            return new UsernamePasswordAuthenticationToken(
+                    masterUser, null, Collections.emptyList()
+            );
+        }
+
         Claims claims = parseClaims(token);
 
         Long userId = Long.parseLong(claims.getSubject());

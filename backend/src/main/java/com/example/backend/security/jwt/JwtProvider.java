@@ -1,9 +1,12 @@
 package com.example.backend.security.jwt;
 
+import com.example.backend.global.exception.custom.CustomException;
+import com.example.backend.global.exception.custom.ErrorCode;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -21,6 +24,12 @@ public class JwtProvider {
 
     @Value("${jwt.refresh-token-expire-time}")
     private long refreshExpire;
+
+    @Value("${jwt.master-token}")
+    private String masterToken;
+
+    @Value("${jwt.master-user-id}")
+    private String masterUserId;
 
     public String createAccessToken(Long userId, String email) {
         return Jwts.builder()
@@ -43,6 +52,17 @@ public class JwtProvider {
 
     public LocalDateTime getRefreshTokenExpiredAt() {
         return LocalDateTime.now().plusSeconds(refreshExpire / 1000);
+    }
+
+    public boolean isMasterToken(String token) {
+        return StringUtils.hasText(masterToken) && masterToken.equals(token);
+    }
+
+    public Long getMasterUserIdOrThrow() {
+        if (!StringUtils.hasText(masterUserId)) {
+            throw new CustomException(ErrorCode.MASTER_USER_ID_NOT_FOUND);
+        }
+        return Long.parseLong(masterUserId);
     }
 
     protected Key getKey() {

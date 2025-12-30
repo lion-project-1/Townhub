@@ -27,6 +27,7 @@ public enum ErrorCode {
     TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "TOKEN_002", "유효하지 않은 토큰입니다."),
     TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "TOKEN_003", "토큰이 존재하지 않습니다."),
     TOKEN_INTERNAL(HttpStatus.UNAUTHORIZED, "TOKEN_004", "토큰 필터 내부 문제"), // test 용
+    MASTER_USER_ID_NOT_FOUND(HttpStatus.UNAUTHORIZED, "TOKEN_005", "해당 유저 ID 가 없음"), // 에러 시, 환경변수 확인
 
     // QUESTION
     QUESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "QUESTION-001", "존재하지 않는 질문입니다."),
