@@ -26,5 +26,5 @@ public class Location extends BaseEntity{
 
     private String province;
     private String city;
-    private String town;
+//    private String town; -> 추후 도입
 }

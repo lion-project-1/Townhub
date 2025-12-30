@@ -14,7 +14,8 @@ public class AnswerResponse {
 	private Long id;
 	private String content;
 	private boolean isAccepted;
-	private String writer;
+	private Long writerId;
+	private String writerNickname;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 
@@ -22,7 +23,8 @@ public class AnswerResponse {
 		return AnswerResponse.builder()
 			.id(answer.getId())
 			.content(answer.getContent())
-			.writer(answer.getUser().getNickname())
+			.writerId(answer.getUser().getId())
+			.writerNickname(answer.getUser().getNickname())
 			.isAccepted(answer.isAccepted())
 			.createdAt(answer.getCreatedAt())
 			.updatedAt(answer.getUpdatedAt())
