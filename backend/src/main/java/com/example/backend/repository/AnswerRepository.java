@@ -1,13 +1,14 @@
 package com.example.backend.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.backend.domain.Answer;
-import org.springframework.data.repository.query.Param;
 
 public interface AnswerRepository extends JpaRepository<Answer, Long> {
 	@Query("""
@@ -23,4 +24,5 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
 	@Query("delete from Answer a where a.question.id = :questionId")
 	void deleteByQuestionId(@Param("questionId") Long questionId);
 
+	Optional<Answer> findByQuestionIdAndIsAcceptedTrue(Long questionId);
 }

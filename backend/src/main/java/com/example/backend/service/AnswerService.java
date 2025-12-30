@@ -78,4 +78,41 @@ public class AnswerService {
 
 		answerRepository.delete(answer);
 	}
+
+	@Transactional
+	public void acceptAnswer(Long answerId, Long userId) {
+		Answer answer = answerRepository.findById(answerId)
+			.orElseThrow(() -> new CustomException(ErrorCode.ANSWER_NOT_FOUND));
+
+		if (!answer.getQuestion().getUser().getId().equals(userId)) {
+			throw new CustomException(ErrorCode.ANSWER_ACCEPT_FORBIDDEN);
+		}
+
+		Long questionId = answer.getQuestion().getId();
+
+		if (answer.isAccepted()) {
+			return;
+		}
+
+		answerRepository.findByQuestionIdAndIsAcceptedTrue(questionId)
+			.ifPresent(Answer::unaccept);
+
+		answer.accept();
+	}
+
+	@Transactional
+	public void unacceptAnswer(Long answerId, Long userId) {
+		Answer answer = answerRepository.findById(answerId)
+			.orElseThrow(() -> new CustomException(ErrorCode.ANSWER_NOT_FOUND));
+
+		if (!answer.getQuestion().getUser().getId().equals(userId)) {
+			throw new CustomException(ErrorCode.ANSWER_ACCEPT_FORBIDDEN);
+		}
+
+		if (!answer.isAccepted()) {
+			return;
+		}
+
+		answer.unaccept();
+	}
 }
