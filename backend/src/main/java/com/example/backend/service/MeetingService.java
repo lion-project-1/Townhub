@@ -90,7 +90,4 @@ public class MeetingService {
             throw new CustomException(ErrorCode.MEETING_HOST_ONLY);
         }
     }
-
-    // TODO: 모임 목록 조회
-    // TODO: 모임 상세 조회
 }
