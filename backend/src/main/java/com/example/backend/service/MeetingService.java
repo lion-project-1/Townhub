@@ -11,7 +11,9 @@ import com.example.backend.domain.MeetingMember;
 import com.example.backend.domain.User;
 import com.example.backend.dto.MeetingCreateRequest;
 import com.example.backend.dto.MeetingDetailResponse;
+import com.example.backend.dto.MeetingListResponse;
 import com.example.backend.dto.MeetingMemberResponse;
+import com.example.backend.dto.MeetingSearchCondition;
 import com.example.backend.dto.MeetingUpdateRequest;
 import com.example.backend.enums.MeetingMemberRole;
 import com.example.backend.enums.MeetingStatus;
@@ -25,6 +27,8 @@ import com.example.backend.repository.MeetingRepository;
 import com.example.backend.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,7 +93,10 @@ public class MeetingService {
                 .toList();
 
         return toMeetingDetailResponse(meeting, members);
+    }
 
+    public Page<MeetingListResponse> getMeetingList(MeetingSearchCondition condition, Pageable pageable) {
+        return meetingRepository.findMeetingList(condition, pageable);
     }
 
     private void validateHost(Long meetingId, Long userId) {
@@ -98,6 +105,4 @@ public class MeetingService {
             throw new CustomException(ErrorCode.MEETING_HOST_ONLY);
         }
     }
-
-    // TODO: 모임 목록 조회
 }
