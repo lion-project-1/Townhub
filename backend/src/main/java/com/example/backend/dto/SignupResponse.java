@@ -31,9 +31,8 @@ public class SignupResponse {
         if (location == null) return null;
         String province = safe(location.getProvince());
         String city = safe(location.getCity());
-        String town = safe(location.getTown());
         String result = String.join(
-                " ", province, city, town)
+                " ", province, city)
                 .trim()
                 .replaceAll("\\s+", " ");
         return result.isBlank() ? null : result;

@@ -18,18 +18,18 @@ public class JwtExceptionFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+            HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
             filterChain.doFilter(request, response);
         } catch (JwtSecurityException e) {
             errorResponseWriter.write(response, e.getErrorCode());
+            return;
         } catch (ExpiredJwtException e) {
             errorResponseWriter.write(response, ErrorCode.TOKEN_EXPIRED);
+            return;
         } catch (JwtException e) {
             errorResponseWriter.write(response, ErrorCode.TOKEN_INVALID);
+            return;
         }
     }
 }

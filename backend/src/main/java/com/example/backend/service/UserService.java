@@ -35,14 +35,12 @@ public class UserService {
         }
 
         String encodedPassword = passwordEncoder.encode(request.getPassword());
-        Location location = locationRepository.findByProvinceAndCityAndTown(
+        Location location = locationRepository.findByProvinceAndCity(
                 request.getProvince(),
-                request.getCity(),
-                request.getTown()
+                request.getCity()
         ).orElseGet(() -> locationRepository.save(Location.builder()
                 .province(request.getProvince())
                 .city(request.getCity())
-                .town(request.getTown())
                 .build()));
 
         User user = request.toEntity(encodedPassword, location);

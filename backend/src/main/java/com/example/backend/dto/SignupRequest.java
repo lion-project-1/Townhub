@@ -12,7 +12,7 @@ public class SignupRequest {
     private String nickname;
     private String province;
     private String city;
-    private String town;
+//    private String town;
 
     public User toEntity(String encodedPassword, Location location) {
         return User.builder()

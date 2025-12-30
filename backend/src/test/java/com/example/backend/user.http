@@ -12,8 +12,7 @@ Content-Type: application/json
   "password": "1234",
   "nickname": "테스트유저1",
   "province": "서울시",
-  "city": "강남구",
-  "town": "신사동"
+  "city": "강남구"
 }
 
 ### 로그인
