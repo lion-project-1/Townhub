@@ -31,45 +31,44 @@ export async function deleteQuestion(id, token) {
 }
 
 
-export async function createQuestion(data, token) {
+export async function createQuestion(data) {
+    const headers = { "Content-Type": "application/json" };
     const res = await fetch(BASE_URL, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // 로그인 토큰이 있다면
-        },
-        body: JSON.stringify(data),
+        headers: headers,
+        body: JSON.stringify({
+            title: data.title,
+            content: data.content,
+            questionCategory: data.category,  // category도 같이 보내야 함
+            userId: 1
+        }),
     });
 
     if (!res.ok) {
+        const text = await res.text();  // 서버가 보낸 에러 메시지 확인
+        console.error("Server Response:", text);
         throw new Error("질문 등록 실패");
     }
 
     return res.json(); // 백엔드가 반환하는 등록된 질문 정보
 }
 
-export async function getQuestion(id, token) {
+export async function getQuestion(id) {
     const res = await fetch(`${BASE_URL}/${id}`, {
         method: "GET",
-        headers: token
-            ? { Authorization: `Bearer ${token}` } // 로그인 필요 시
-            : undefined,
     });
 
     if (!res.ok) {
         throw new Error("질문 조회 실패");
     }
 
-    return res.json(); // 백엔드가 반환하는 질문 데이터
+    return res.json();
 }
 
 // 모든 질문 조회
-export async function getQuestions(token) {
+export async function getQuestions() {
     const res = await fetch(BASE_URL, {
-        method: "GET",
-        headers: token
-            ? { Authorization: `Bearer ${token}` }
-            : undefined,
+        method: "GET"
     });
 
     if (!res.ok) {

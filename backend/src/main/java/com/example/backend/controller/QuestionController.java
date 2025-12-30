@@ -36,12 +36,14 @@ public class QuestionController {
 
     // 질문 생성
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> create(@RequestBody QuestionCreateRequest request) {
+    public ResponseEntity<ApiResponse<Long>> create(@RequestBody QuestionCreateRequest request
+                                                    //@AuthenticationPrincipal CustomUserDetails user
+    ) {
         Long tmpUserId = 1L;
 
-        questionService.createQuestion(tmpUserId, request);
+        Long questionId = questionService.createQuestion(tmpUserId, request);
 
-        return ResponseEntity.ok(ApiResponse.success("질문이 생성되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success(questionId));
     }
 
     // 질문 리스트

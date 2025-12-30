@@ -30,23 +30,23 @@ public class QuestionService {
     private final LocationRepository locationRepository;
 
     // 질문 등록
-    public void createQuestion(Long userId, QuestionCreateRequest request) {
+    @Transactional(readOnly = false)
+    public Long createQuestion(Long userId, QuestionCreateRequest request) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자"));
 
-        Location location = locationRepository.findById(request.getLocationId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역"));
 
         Question question = Question.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
                 .questionCategory(request.getQuestionCategory())
                 .user(user)
-                .location(location)
                 .build();
 
         questionRepository.save(question);
+
+        return question.getId();
 
     }
 
