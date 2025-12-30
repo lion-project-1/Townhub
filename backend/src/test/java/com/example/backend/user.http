@@ -1,0 +1,18 @@
+### 회원가입
+POST http://localhost:8080/api/users/signup
+Content-Type: application/json
+
+{
+  "email": "test3@test.com",
+  "password": "1234",
+  "nickname": "테스트유저3"
+}
+
+### 로그인
+POST http://localhost:8080/api/users/login
+Content-Type: application/json
+
+{
+  "email": "test1@test.com",
+  "password": "1234"
+}
