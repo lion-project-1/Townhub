@@ -1,18 +1,47 @@
+@host = http://localhost:8080
+@accessToken =
+@refreshToken =
+@newAccessToken =
+@masterToken = 19970111
+
 ### 회원가입
-POST http://localhost:8080/api/users/signup
+POST {{host}}/api/users/signup
 Content-Type: application/json
 
 {
-  "email": "test3@test.com",
+  "email": "test1@test.com",
   "password": "1234",
-  "nickname": "테스트유저3"
+  "nickname": "테스트유저1",
+  "province": "서울시",
+  "city": "강남구"
 }
 
 ### 로그인
-POST http://localhost:8080/api/users/login
+POST {{host}}/api/users/login
 Content-Type: application/json
 
 {
   "email": "test1@test.com",
   "password": "1234"
 }
+
+### AccessToken 재발급
+POST {{host}}/api/users/token/reissue
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### API 호출 (AccessToken 필요)
+GET {{host}}/api/test/auth
+Authorization: Bearer {{accessToken}}
+
+### API 재호출 (재발급된 AccessToken)
+GET {{host}}/api/test/auth
+Authorization: Bearer {{newAccessToken}}
+
+### 마스터 토큰으로 API 호출 (만료/검증 안함)
+GET {{host}}/api/test/auth
+Authorization: Bearer {{masterToken}}
+
