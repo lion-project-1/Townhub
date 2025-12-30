@@ -42,6 +42,7 @@ public class QuestionService {
                 .content(request.getContent())
                 .questionCategory(request.getQuestionCategory())
                 .user(user)
+                .location(user.getLocation())
                 .build();
 
         questionRepository.save(question);

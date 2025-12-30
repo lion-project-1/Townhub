@@ -17,11 +17,13 @@ public class QuestionCreateRequest {
     private String content;
     private QuestionCategory questionCategory;
     private Long userId;
+    private Location location;
 
     public QuestionCreateRequest(Question question) {
         this.title = question.getTitle();
         this.content = question.getContent();
         this.questionCategory = question.getQuestionCategory();
         this.userId = question.getUser().getId();
+        this.location = question.getUser().getLocation();
     }
 }
