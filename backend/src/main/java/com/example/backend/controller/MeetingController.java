@@ -1,48 +1,47 @@
 package com.example.backend.controller;
 
+import com.example.backend.domain.User;
 import com.example.backend.dto.MeetingCreateRequest;
 import com.example.backend.dto.MeetingCreateResponse;
 import com.example.backend.dto.MeetingDetailResponse;
+import com.example.backend.dto.MeetingJoinRequestDto;
 import com.example.backend.dto.MeetingListResponse;
 import com.example.backend.dto.MeetingSearchCondition;
 import com.example.backend.dto.MeetingUpdateRequest;
-import com.example.backend.enums.MeetingCategory;
 import com.example.backend.enums.MeetingStatus;
 import com.example.backend.global.response.ApiResponse;
 import com.example.backend.service.MeetingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/meetings")
 @RequiredArgsConstructor
-@CrossOrigin("*")
+@Slf4j
 public class MeetingController {
 
     private final MeetingService meetingService;
-    private Long tmpId = 1L;
 
     @PostMapping
     public ResponseEntity<ApiResponse<MeetingCreateResponse>> createMeeting(
-            //@AuthenticationPrincipal UserPrincipal userPrincipal,
+            @AuthenticationPrincipal User user,
             @RequestBody @Valid MeetingCreateRequest request) {
 
-        Long meetingId = meetingService.createMeeting(//userPrincipal.getUserId(),
-                 tmpId, request);
+        Long meetingId = meetingService.createMeeting(user.getId(), request);
 
         MeetingCreateResponse response =
                 new MeetingCreateResponse(meetingId, MeetingStatus.RECRUITING);
@@ -75,18 +74,27 @@ public class MeetingController {
     @PatchMapping("/{meetingId}")
     public ResponseEntity<ApiResponse<Void>> updateMeeting(
             @PathVariable Long meetingId,
-            //@AuthenticationPrincipal UserPrincipal userPrincipal,
+            @AuthenticationPrincipal User user,
             @RequestBody MeetingUpdateRequest request) {
-
-        Long tmpId = 1L;
 
         meetingService.updateMeeting(
                 meetingId,
-                //userPrincipal.getUserId(),
-                tmpId,
+                user.getId(),
                 request
         );
 
         return ResponseEntity.ok(ApiResponse.success("모임이 변경되었습니다.", null));
+    }
+
+    @PostMapping("/{meetingId}/join")
+    public ResponseEntity<ApiResponse<Void>> requestJoin(
+            @PathVariable Long meetingId,
+            @Valid @RequestBody(required = false) MeetingJoinRequestDto request,
+            @AuthenticationPrincipal User user) {
+
+        String message = request != null ? request.getMessage() : null;
+        meetingService.requestJoin(meetingId, user.getId(), message);
+
+        return ResponseEntity.ok(ApiResponse.success("모임 가입이 신청되었습니다.", null));
     }
 }
