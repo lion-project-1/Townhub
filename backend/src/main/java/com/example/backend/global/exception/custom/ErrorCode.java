@@ -1,13 +1,14 @@
 package com.example.backend.global.exception.custom;
 
-import org.springframework.http.HttpStatus;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
+
 
 @Getter
 @AllArgsConstructor
 public enum ErrorCode {
+
 	// COMMON
 	INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON-001", "서버 내부 오류가 발생했습니다."),
 	INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "COMMON-002", "요청 값이 올바르지 않습니다."),
@@ -63,3 +64,4 @@ public enum ErrorCode {
 	private final String code;
 	private final String message;
 }
+
