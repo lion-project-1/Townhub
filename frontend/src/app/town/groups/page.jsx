@@ -27,8 +27,7 @@ export default function GroupListPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectedTown } = useTown();
-
-  console.log("selectedTown:", selectedTown);
+  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
   /* =========================
      URL 기반 상태
@@ -87,14 +86,17 @@ export default function GroupListPage() {
           city: selectedTown.city,
         });
 
-        const result = await getMeetingList({
-          page,
-          category: selectedCategory,
-          status: selectedStatus,
-          keyword: searchKeyword,
-          province: selectedTown.province, // ✅ null 제거
-          city: selectedTown.city, // ✅ null 제거
-        });
+        const result = await getMeetingList(
+          {
+            page,
+            category: selectedCategory,
+            status: selectedStatus,
+            keyword: searchKeyword,
+            province: selectedTown.province, // ✅ null 제거
+            city: selectedTown.city, // ✅ null 제거
+          },
+          token
+        );
 
         setGroups(result.data.content);
         setTotalPages(result.data.page.totalPages);

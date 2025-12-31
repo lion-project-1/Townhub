@@ -1,6 +1,6 @@
 const BASE_URL = "http://localhost:8080/api/locations";
 
-export async function searchTowns(keyword) {
+export async function searchTowns(keyword, token) {
   if (!keyword || keyword.trim().length < 2) {
     return [];
   }
@@ -11,7 +11,7 @@ export async function searchTowns(keyword) {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        //Authorization: "Bearer {마스터 토큰}}",
+        Authorization: `Bearer ${token}`,
       },
       credentials: "include",
     }

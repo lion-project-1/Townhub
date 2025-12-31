@@ -14,6 +14,7 @@ export default function TownSelectPage() {
 
   const { selectTown } = useTown();
   const router = useRouter();
+  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
   const handleSearch = async () => {
     if (searchQuery.trim().length < 2) {
@@ -26,7 +27,7 @@ export default function TownSelectPage() {
     setLoading(true);
 
     try {
-      const result = await searchTowns(searchQuery);
+      const result = await searchTowns(searchQuery, token);
       setTowns(Array.isArray(result.data) ? result.data : []);
     } catch (e) {
       console.error(e);

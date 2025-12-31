@@ -1,13 +1,9 @@
 const BASE_URL = "http://localhost:8080/api/meetings";
 
-export async function getMeetingList({
-  page = 0,
-  keyword,
-  category,
-  status,
-  province,
-  city,
-}) {
+export async function getMeetingList(
+  { page = 0, keyword, category, status, province, city },
+  token
+) {
   const params = new URLSearchParams();
 
   params.append("page", page);
@@ -20,13 +16,13 @@ export async function getMeetingList({
   if (city) params.append("city", city);
 
   const url = `${BASE_URL}?${params.toString()}`;
-  console.log("REQUEST URL:", url); // 디버깅용 (꼭 확인)
+  console.log("REQUEST URL:", url);
 
   const res = await fetch(url, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      //Authorization: "Bearer {마스터 토큰}}",
+      Authorization: `Bearer ${token}`,
     },
     credentials: "include",
   });
@@ -42,12 +38,12 @@ export async function getMeetingList({
  * 모임 상세 조회
  * @param {number|string} meetingId
  */
-export async function getMeetingDetail(meetingId) {
+export async function getMeetingDetail(meetingId, token) {
   const res = await fetch(`${BASE_URL}/${meetingId}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      //Authorization: "Bearer {마스터 토큰}}",
+      Authorization: `Bearer ${token}`,
     },
     credentials: "include",
   });
@@ -59,12 +55,12 @@ export async function getMeetingDetail(meetingId) {
   return res.json();
 }
 
-export async function createMeeting(data) {
+export async function createMeeting(data, token) {
   const res = await fetch(BASE_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      //Authorization: "Bearer {마스터 토큰}}",
+      Authorization: `Bearer ${token}`,
     },
     credentials: "include",
     body: JSON.stringify(data),
@@ -79,12 +75,12 @@ export async function createMeeting(data) {
   return res.json();
 }
 
-export async function updateMeeting(meetingId, data) {
+export async function updateMeeting(meetingId, data, token) {
   const res = await fetch(`${BASE_URL}/${meetingId}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      //Authorization: "Bearer {마스터 토큰}}",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });

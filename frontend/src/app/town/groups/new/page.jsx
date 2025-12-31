@@ -21,8 +21,9 @@ const CATEGORIES = [
 
 export default function GroupNewPage() {
   const router = useRouter();
-  const { token } = useAuth();
+  //const { token } = useAuth();
   const { selectedTown } = useTown();
+  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
   const [formData, setFormData] = useState({
     title: "",
@@ -58,7 +59,7 @@ export default function GroupNewPage() {
         capacity: Number(formData.capacity),
       };
 
-      const result = await createMeeting(payload);
+      const result = await createMeeting(payload, token);
 
       // 생성된 meetingId로 상세 페이지 이동
       router.push(`/town/groups/${result.data.meetingId}`);

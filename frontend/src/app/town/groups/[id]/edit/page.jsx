@@ -32,13 +32,15 @@ export default function GroupEditPage() {
     capacity: "",
   });
 
+  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
+
   /**
    * 기존 모임 데이터 로드 + 방장 체크
    */
   useEffect(() => {
     const loadMeeting = async () => {
       try {
-        const result = await getMeetingDetail(params.id);
+        const result = await getMeetingDetail(params.id, token);
         const meeting = result.data;
 
         const host = meeting.members.find((m) => m.role === "HOST");
@@ -84,14 +86,18 @@ export default function GroupEditPage() {
     e.preventDefault();
 
     try {
-      await updateMeeting(params.id, {
-        title: formData.title,
-        category: formData.category,
-        description: formData.description,
-        meetingPlace: formData.meetingPlace,
-        schedule: formData.schedule,
-        capacity: Number(formData.capacity),
-      });
+      await updateMeeting(
+        params.id,
+        {
+          title: formData.title,
+          category: formData.category,
+          description: formData.description,
+          meetingPlace: formData.meetingPlace,
+          schedule: formData.schedule,
+          capacity: Number(formData.capacity),
+        },
+        token
+      );
 
       router.push(`/town/groups/${params.id}`);
     } catch (e) {

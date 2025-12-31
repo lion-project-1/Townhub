@@ -21,11 +21,12 @@ export default function GroupDetailPage() {
   const { user } = useAuth();
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
+  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
   useEffect(() => {
     const loadGroup = async () => {
       try {
-        const result = await getMeetingDetail(params.id);
+        const result = await getMeetingDetail(params.id, token);
         setGroup(result.data);
       } catch (e) {
         console.error(e);
