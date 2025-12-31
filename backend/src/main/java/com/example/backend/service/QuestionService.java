@@ -10,6 +10,7 @@ import com.example.backend.dto.QuestionUpdateRequest;
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
 import com.example.backend.repository.LocationRepository;
+import com.example.backend.repository.AnswerRepository;
 import com.example.backend.repository.QuestionRepository;
 import com.example.backend.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,6 +75,7 @@ public class QuestionService {
     }
 
 
+    private final AnswerRepository answerRepository;
 
     @Transactional
 
@@ -91,6 +93,9 @@ public class QuestionService {
 
     @Transactional
     public void deleteQuestion(Long questionId, Long userId) {
+
+        answerRepository.deleteByQuestionId(questionId);
+
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new CustomException(ErrorCode.QUESTION_NOT_FOUND));
 
