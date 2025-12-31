@@ -37,7 +37,7 @@ public class AnswerController {
 		answerService.createAnswer(questionId, tmpUserId, request);
 		return ResponseEntity.ok(ApiResponse.success("답변이 등록되었습니다."));
 	}
-	
+
 	@GetMapping("/questions/{questionId}/answers")
 	public ResponseEntity<ApiResponse<List<AnswerResponse>>> getAnswers(
 		@PathVariable Long questionId
@@ -65,5 +65,27 @@ public class AnswerController {
 		Long tmpUserId = 1L;
 		answerService.deleteAnswer(answerId, tmpUserId);
 		return ResponseEntity.ok(ApiResponse.success("답변이 삭제되었습니다."));
+	}
+
+	// 답변 채택
+	@PatchMapping("/answers/{answerId}/accept")
+	public ResponseEntity<ApiResponse<Void>> acceptAnswer(
+		// @AuthenticationPrincipal Long userId,
+		@PathVariable("answerId") Long answerId
+	) {
+		Long tmpUserId = 1L;
+		answerService.acceptAnswer(answerId, tmpUserId);
+		return ResponseEntity.ok(ApiResponse.success("답변 채택이 완료되었습니다."));
+	}
+
+	// 답변 채택 취소
+	@PatchMapping("/answers/{answerId}/unaccept")
+	public ResponseEntity<ApiResponse<Void>> unacceptAnswer(
+		// @AuthenticationPrincipal Long userId,
+		@PathVariable("answerId") Long answerId
+	) {
+		Long tmpUserId = 1L;
+		answerService.unacceptAnswer(answerId, tmpUserId);
+		return ResponseEntity.ok(ApiResponse.success("채택 취소가 완료되었습니다."));
 	}
 }

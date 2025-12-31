@@ -1,9 +1,34 @@
 package com.example.backend.service;
 
+import static com.example.backend.mapper.MeetingMapper.toMeeting;
+import static com.example.backend.mapper.MeetingMapper.toMeetingDetailResponse;
+import static com.example.backend.mapper.MeetingMapper.toMeetingMemberResponse;
+
+import com.example.backend.common.annotation.MeasureTime;
+import com.example.backend.domain.Location;
+import com.example.backend.domain.Meeting;
+import com.example.backend.domain.MeetingMember;
+import com.example.backend.domain.User;
+import com.example.backend.dto.MeetingCreateRequest;
+import com.example.backend.dto.MeetingDetailResponse;
+import com.example.backend.dto.MeetingListResponse;
+import com.example.backend.dto.MeetingMemberResponse;
+import com.example.backend.dto.MeetingSearchCondition;
+import com.example.backend.dto.MeetingUpdateRequest;
+import com.example.backend.enums.MeetingMemberRole;
+import com.example.backend.enums.MeetingStatus;
+import com.example.backend.global.exception.custom.CustomException;
+import com.example.backend.global.exception.custom.ErrorCode;
+import com.example.backend.mapper.MeetingMapper;
+import com.example.backend.repository.LocationRepository;
 import com.example.backend.repository.MeetingJoinRequestRepository;
 import com.example.backend.repository.MeetingMemberRepository;
 import com.example.backend.repository.MeetingRepository;
+import com.example.backend.repository.UserRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +40,69 @@ public class MeetingService {
     private final MeetingRepository meetingRepository;
     private final MeetingMemberRepository meetingMemberRepository;
     private final MeetingJoinRequestRepository meetingJoinRequestRepository;
+    private final UserRepository userRepository;
+    private final LocationRepository locationRepository;
 
-    // TODO: 모임 생성
-    // TODO: 모임 목록 조회
-    // TODO: 모임 상세 조회
-    // TODO: 모임 수정
+    @Transactional
+    public Long createMeeting(Long userId, MeetingCreateRequest request) {
+
+        User host = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        Location location = locationRepository.findById(request.getLocationId())
+                .orElseThrow(() -> new CustomException(ErrorCode.LOCATION_NOT_FOUND));
+
+        Meeting meeting = toMeeting(request, location, host);
+        meetingRepository.save(meeting);
+
+        MeetingMember hostMember = MeetingMember.createHost(meeting, host);
+        meetingMemberRepository.save(hostMember);
+
+        return meeting.getId();
+    }
+
+    @Transactional
+    public void updateMeeting(
+            Long meetingId,
+            Long userId,
+            MeetingUpdateRequest request) {
+
+        Meeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
+
+        validateHost(meetingId, userId);
+
+        meeting.update(
+                request.getTitle(),
+                request.getDescription(),
+                request.getCategory(),
+                request.getMeetingPlace(),
+                request.getSchedule(),
+                request.getCapacity()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public MeetingDetailResponse getMeetingDetail(Long meetingId) {
+
+        Meeting meeting = meetingRepository.findDetailWithMembersById(meetingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
+
+        List<MeetingMemberResponse> members = meeting.getMembers().stream()
+                .map(MeetingMapper::toMeetingMemberResponse)
+                .toList();
+
+        return toMeetingDetailResponse(meeting, members);
+    }
+
+    public Page<MeetingListResponse> getMeetingList(MeetingSearchCondition condition, Pageable pageable) {
+        return meetingRepository.findMeetingList(condition, pageable);
+    }
+
+    private void validateHost(Long meetingId, Long userId) {
+        if (!meetingMemberRepository.existsByMeetingIdAndUserIdAndRole(
+                meetingId, userId, MeetingMemberRole.HOST)) {
+            throw new CustomException(ErrorCode.MEETING_HOST_ONLY);
+        }
+    }
 }
