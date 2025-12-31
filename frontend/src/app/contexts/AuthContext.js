@@ -11,16 +11,17 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+      setUser({ ...parsedUser, id: Number(parsedUser.id) });
     }
     setIsLoading(false);
   }, []);
 
   const login = async (email, password) => {
     const mockUser = {
-      id: "1",
+      id: 1,
       name: "김철수",
-      email,
+      email: "test@test.com",
       profileImage: undefined,
     };
 
@@ -30,9 +31,9 @@ export function AuthProvider({ children }) {
 
   const signup = async (name, email, password) => {
     const mockUser = {
-      id: "1",
+      id: 1,
       name,
-      email,
+      email: "test@test.com",
       profileImage: undefined,
     };
 
