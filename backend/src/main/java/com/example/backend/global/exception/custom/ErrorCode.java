@@ -8,6 +8,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum ErrorCode {
+
 	// COMMON
 	INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON-001", "서버 내부 오류가 발생했습니다."),
 	INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "COMMON-002", "요청 값이 올바르지 않습니다."),
@@ -41,7 +42,7 @@ public enum ErrorCode {
 	ANSWER_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "ANSWER_DELETE_FORBIDDEN", "답변 삭제 권한이 없습니다."),
 	ANSWER_ACCEPT_FORBIDDEN(HttpStatus.FORBIDDEN, "ANSWER_ACCEPT_FORBIDDEN", "답변 채택 권한이 없습니다."),
 	ANSWER_ALREADY_ACCEPTED(HttpStatus.BAD_REQUEST, "ANSWER_ALREADY_ACCEPTED", "이미 채택된 답변입니다."),
-	
+
 	// Location
 	LOCATION_NOT_FOUND(HttpStatus.NOT_FOUND, "LOCATION-001", "해당 지역이 존재하지 않습니다."),
 
@@ -57,3 +58,4 @@ public enum ErrorCode {
 	private final String code;
 	private final String message;
 }
+
