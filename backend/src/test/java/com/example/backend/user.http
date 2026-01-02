@@ -1,6 +1,6 @@
 @host = http://localhost:8080
-@accessToken =
-@refreshToken =
+@accessToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0MUB0ZXN0LmNvbSIsImlhdCI6MTc2NzMyMTQ5NCwiZXhwIjoxNzY3MzIxNzk0fQ.pBhsD9LnCgSa8uo2ZB6eHXHDYc2bUxh1ZmcofKayxmA
+@refreshToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzY3MzIyMDgwLCJleHAiOjE3NjczMjM4ODB9.EKjdG3kTvPYlphCGF8acZj0fbfAw2BLKlPd-dBA7gTE
 @newAccessToken =
 @masterToken = 19970111
 
@@ -16,7 +16,7 @@ Content-Type: application/json
   "city": "강남구"
 }
 
-### 로그인
+### 로그인: AT는 Body, RT는 Set-Cookie + DB 저장
 POST {{host}}/api/users/login
 Content-Type: application/json
 
@@ -25,9 +25,15 @@ Content-Type: application/json
   "password": "1234"
 }
 
+> {%
+    const token = response.body?.data?.accessToken;
+    client.global.set("accessToken", token);
+%}
+
+
 ### AccessToken 재발급
 POST {{host}}/api/users/token/reissue
-Content-Type: application/json
+Cookie: refreshToken={{refreshToken}}
 
 {
   "refreshToken": "{{refreshToken}}"
@@ -40,6 +46,10 @@ Authorization: Bearer {{accessToken}}
 ### API 재호출 (재발급된 AccessToken)
 GET {{host}}/api/test/auth
 Authorization: Bearer {{newAccessToken}}
+
+### 로그아웃: RT DB 삭제 + 쿠키 삭제(Set-Cookie 만료)
+POST {{host}}/api/users/logout
+Cookie: refreshToken={{refreshToken}}
 
 ### 마스터 토큰으로 API 호출 (만료/검증 안함)
 GET {{host}}/api/test/auth
