@@ -11,9 +11,10 @@ import {
   Settings,
   UserPlus,
   UserMinus,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { getMeetingDetail } from "@/app/api/meeting";
+import { getMeetingDetail, requestJoinMeeting } from "@/app/api/meeting";
 
 export default function GroupDetailPage() {
   const params = useParams();
@@ -22,6 +23,10 @@ export default function GroupDetailPage() {
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
+
+  // ✅ 가입 메시지 관련 상태
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [joinMessage, setJoinMessage] = useState("");
 
   useEffect(() => {
     const loadGroup = async () => {
@@ -49,8 +54,47 @@ export default function GroupDetailPage() {
   const isLeader = user?.id === host?.userId;
   const isJoined = group.members.some((m) => m.userId === user?.id);
 
+  const isFull = group.members.length >= group.capacity;
+  const isRecruitingClosed = group.status === "ACTIVE";
+  const canJoin = !isJoined && !isFull && !isRecruitingClosed;
+
+  const handleJoinSubmit = async () => {
+    try {
+      await requestJoinMeeting(params.id, token /*, joinMessage */);
+
+      alert("가입 신청이 완료되었습니다.");
+      setShowJoinModal(false);
+      setJoinMessage("");
+      router.refresh();
+    } catch (e) {
+      console.error(e);
+
+      const code = e?.response?.data?.code;
+
+      switch (code) {
+        case "MEETING-005":
+          alert("이미 모임에 신청하셨습니다.");
+          setShowJoinModal(false);
+          break;
+
+        case "MEETING-007":
+          alert("이미 모임에 참여 중입니다.");
+          setShowJoinModal(false);
+          break;
+
+        case "MEETING-006":
+          alert("모임 정원이 가득 찼습니다.");
+          setShowJoinModal(false);
+          break;
+
+        default:
+          alert("가입 신청 중 오류가 발생했습니다.");
+      }
+    }
+  };
+
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
+    <div className="min-h-[calc(100vh-4rem)] bg-gray-50 relative">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Hero */}
         <div className="h-64 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center mb-6">
@@ -98,10 +142,14 @@ export default function GroupDetailPage() {
                 </>
               ) : (
                 <button
+                  disabled={!canJoin}
+                  onClick={canJoin ? () => setShowJoinModal(true) : undefined}
                   className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
                     isJoined
                       ? "border border-gray-300 hover:bg-gray-50"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
+                      : canJoin
+                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
                   }`}
                 >
                   {isJoined ? (
@@ -109,11 +157,13 @@ export default function GroupDetailPage() {
                       <UserMinus className="w-4 h-4" />
                       탈퇴하기
                     </>
-                  ) : (
+                  ) : canJoin ? (
                     <>
                       <UserPlus className="w-4 h-4" />
                       가입하기
                     </>
+                  ) : (
+                    "모집이 마감되었습니다"
                   )}
                 </button>
               )}
@@ -168,6 +218,44 @@ export default function GroupDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ✅ 가입 메시지 모달 */}
+      {showJoinModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl w-full max-w-md p-6 relative">
+            <button
+              onClick={() => setShowJoinModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <X />
+            </button>
+
+            <h2 className="text-lg text-gray-900 mb-4">가입 메시지</h2>
+
+            <textarea
+              value={joinMessage}
+              onChange={(e) => setJoinMessage(e.target.value)}
+              placeholder="모임장에게 전달할 가입 메시지를 작성해주세요."
+              className="w-full h-32 border border-gray-300 rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setShowJoinModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleJoinSubmit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                가입 요청
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

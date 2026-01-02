@@ -93,3 +93,24 @@ export async function updateMeeting(meetingId, data, token) {
 
   return res.json();
 }
+
+export async function requestJoinMeeting(meetingId, token, message) {
+  const res = await fetch(`${BASE_URL}/${meetingId}/join`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ message }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const error = new Error("가입 요청 실패");
+    error.response = { data };
+    throw error;
+  }
+
+  return data;
+}
