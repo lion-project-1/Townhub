@@ -55,7 +55,8 @@ public enum ErrorCode {
 	MEETING_IS_FULL(HttpStatus.BAD_REQUEST, "MEETING-006", "이미 모임의 정원이 초과되었습니다."),
 	ALREADY_MEETING_MEMBER(HttpStatus.BAD_REQUEST, "MEETING-007", "이미 모임의 멤버입니다."),
 	MEETING_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND,"MEETING-008","모임 가입 신청을 찾을 수 없습니다."),
-
+	MEETING_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND,"MEETING-009","해당 멤버를 모임에서 조회할 수 없습니다."),
+	MEETING_HOST_CANNOT_BE_REMOVED(HttpStatus.BAD_REQUEST, "MEETING-010", "방장은 내보낼 수 없습니다."),
 
 	;
 

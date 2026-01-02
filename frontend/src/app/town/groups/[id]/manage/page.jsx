@@ -13,6 +13,20 @@ import {
   removeMeetingMember,
 } from "@/app/api/meeting";
 
+/* ======================
+   날짜 포맷 함수
+   ====================== */
+function formatDate(dateString) {
+  if (!dateString) return "";
+
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}.${month}.${day}`;
+}
+
 export default function GroupManagePage() {
   const params = useParams();
   const router = useRouter();
@@ -21,18 +35,23 @@ export default function GroupManagePage() {
   const [activeTab, setActiveTab] = useState("requests");
   const [requests, setRequests] = useState([]);
   const [members, setMembers] = useState([]);
+
+  // 임시 로컬 토큰 (추후 AuthContext로 교체 권장)
   const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
   /* ======================
-     가입 신청 목록
+     가입 신청 목록 조회
      ====================== */
   useEffect(() => {
     if (activeTab !== "requests") return;
 
     getJoinRequests(meetingId, token)
       .then((res) => {
-        if (res.success) setRequests(res.data);
-        else handleError(res.code, res.message);
+        if (res.success) {
+          setRequests(res.data);
+        } else {
+          handleError(res.code, res.message);
+        }
       })
       .catch((e) => {
         handleError(e?.response?.data?.code, e?.response?.data?.message);
@@ -40,20 +59,21 @@ export default function GroupManagePage() {
   }, [activeTab, meetingId]);
 
   /* ======================
-     멤버 목록
+     멤버 목록 최초 로딩 (중요)
      ====================== */
   useEffect(() => {
-    if (activeTab !== "members") return;
-
     getMeetingMembers(meetingId, token)
       .then((res) => {
-        if (res.success) setMembers(res.data);
-        else handleError(res.code, res.message);
+        if (res.success) {
+          setMembers(res.data);
+        } else {
+          handleError(res.code, res.message);
+        }
       })
       .catch((e) => {
         handleError(e?.response?.data?.code, e?.response?.data?.message);
       });
-  }, [activeTab, meetingId]);
+  }, [meetingId]);
 
   /* ======================
      승인 / 거절 / 강퇴
@@ -62,7 +82,10 @@ export default function GroupManagePage() {
     try {
       const res = await approveJoinRequest(meetingId, requestId, token);
       if (res.success) {
+        // 신청 목록에서 제거
         setRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+        // 멤버 수 즉시 반영을 원하면 재조회
+        refreshMembers();
       } else {
         handleError(res.code, res.message);
       }
@@ -84,18 +107,30 @@ export default function GroupManagePage() {
     }
   };
 
-  const handleRemove = async (memberId) => {
+  const handleRemove = async (userId) => {
     if (!confirm("정말로 이 멤버를 내보내시겠습니까?")) return;
 
     try {
-      const res = await removeMeetingMember(meetingId, memberId, token);
+      const res = await removeMeetingMember(meetingId, userId, token);
       if (res.success) {
-        setMembers((prev) => prev.filter((m) => m.id !== memberId));
+        // 즉시 UI 반영
+        setMembers((prev) => prev.filter((m) => m.userId !== userId));
       } else {
         handleError(res.code, res.message);
       }
     } catch (e) {
       handleError(e?.response?.data?.code, e?.response?.data?.message);
+    }
+  };
+
+  const refreshMembers = async () => {
+    try {
+      const res = await getMeetingMembers(meetingId, token);
+      if (res.success) {
+        setMembers(res.data);
+      }
+    } catch (e) {
+      // 무시
     }
   };
 
@@ -127,7 +162,7 @@ export default function GroupManagePage() {
   };
 
   /* ======================
-     UI (변경 없음)
+     UI (레이아웃 / CSS 변경 없음)
      ====================== */
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
@@ -168,6 +203,7 @@ export default function GroupManagePage() {
           </div>
 
           <div className="p-6">
+            {/* 가입 신청 탭 */}
             {activeTab === "requests" && (
               <div className="space-y-4">
                 {requests.length > 0 ? (
@@ -182,7 +218,7 @@ export default function GroupManagePage() {
                           <p className="text-sm text-gray-600">{r.message}</p>
                         </div>
                         <span className="text-sm text-gray-500">
-                          {r.requestedAt}
+                          {formatDate(r.requestedAt)}
                         </span>
                       </div>
                       <div className="flex gap-2">
@@ -209,20 +245,23 @@ export default function GroupManagePage() {
               </div>
             )}
 
+            {/* 멤버 관리 탭 */}
             {activeTab === "members" && (
               <div className="space-y-3">
                 {members.map((m) => (
                   <div
-                    key={m.id}
+                    key={m.userId}
                     className="flex items-center justify-between p-4 rounded-lg border border-gray-200"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white">
-                        {m.name[0]}
+                        {m.nickname?.[0] || "?"}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-900">{m.name}</span>
+                          <span className="text-gray-900">
+                            {m.nickname || "알 수 없음"}
+                          </span>
                           {m.role === "HOST" && (
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
                               모임장
@@ -230,13 +269,14 @@ export default function GroupManagePage() {
                           )}
                         </div>
                         <span className="text-sm text-gray-500">
-                          가입일: {m.joinedAt}
+                          가입일: {formatDate(m.joinedAt)}
                         </span>
                       </div>
                     </div>
+
                     {m.role !== "HOST" && (
                       <button
-                        onClick={() => handleRemove(m.id)}
+                        onClick={() => handleRemove(m.userId)}
                         className="px-3 py-1.5 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 flex items-center gap-1"
                       >
                         <UserMinus className="w-4 h-4" /> 내보내기

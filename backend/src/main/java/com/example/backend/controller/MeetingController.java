@@ -7,6 +7,8 @@ import com.example.backend.dto.MeetingDetailResponse;
 import com.example.backend.dto.MeetingJoinRequestDto;
 import com.example.backend.dto.MeetingJoinRequestResponse;
 import com.example.backend.dto.MeetingListResponse;
+import com.example.backend.dto.MeetingMemberResponse;
+import com.example.backend.dto.MeetingMemberTimelineResponse;
 import com.example.backend.dto.MeetingSearchCondition;
 import com.example.backend.dto.MeetingUpdateRequest;
 import com.example.backend.enums.MeetingStatus;
@@ -22,6 +24,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -103,7 +106,7 @@ public class MeetingController {
     @GetMapping("/{meetingId}/manage/join-requests")
     public ApiResponse<List<MeetingJoinRequestResponse>> getJoinRequests(
             @PathVariable Long meetingId,
-            @AuthenticationPrincipal User user ) {
+            @AuthenticationPrincipal User user) {
 
         List<MeetingJoinRequestResponse> joinRequests = meetingService.getJoinRequests(meetingId, user.getId());
         return ApiResponse.success(joinRequests);
@@ -113,7 +116,7 @@ public class MeetingController {
     public ApiResponse<Void> approve(
             @PathVariable Long meetingId,
             @PathVariable Long requestId,
-            @AuthenticationPrincipal User user ) {
+            @AuthenticationPrincipal User user) {
 
         meetingService.approveJoinRequest(meetingId, requestId, user.getId());
         return ApiResponse.success();
@@ -123,9 +126,26 @@ public class MeetingController {
     public ApiResponse<Void> reject(
             @PathVariable Long meetingId,
             @PathVariable Long requestId,
-            @AuthenticationPrincipal User user
-    ) {
+            @AuthenticationPrincipal User user) {
         meetingService.rejectJoinRequest(meetingId, requestId, user.getId());
         return ApiResponse.success();
+    }
+
+    @GetMapping("{meetingId}/manage/members")
+    public ApiResponse<List<MeetingMemberTimelineResponse>> getMembers(
+            @PathVariable Long meetingId,
+            @AuthenticationPrincipal User user) {
+
+        return ApiResponse.success( meetingService.getMembers(meetingId, user.getId()));
+    }
+
+    @DeleteMapping("/{meetingId}/manage/members/{memberId}")
+    public ApiResponse<Void> removeMember(
+            @PathVariable Long meetingId,
+            @PathVariable Long memberId,
+            @AuthenticationPrincipal User user) {
+
+        meetingService.removeMember(meetingId, memberId, user.getId());
+        return ApiResponse.success("멤버를 강퇴했습니다.");
     }
 }

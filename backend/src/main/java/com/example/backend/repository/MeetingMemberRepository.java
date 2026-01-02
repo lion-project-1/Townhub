@@ -4,6 +4,8 @@ import com.example.backend.domain.Meeting;
 import com.example.backend.domain.MeetingMember;
 import com.example.backend.domain.User;
 import com.example.backend.enums.MeetingMemberRole;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Long> {
@@ -16,4 +18,9 @@ public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Lo
     boolean existsByMeetingAndUser(Meeting meeting, User user);
 
     long countByMeeting(Meeting meeting);
+
+    List<MeetingMember> findAllByMeeting(Meeting meeting);
+
+    Optional<MeetingMember> findByIdAndMeeting(Long id, Meeting meeting);
+
 }

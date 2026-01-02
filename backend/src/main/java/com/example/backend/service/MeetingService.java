@@ -14,6 +14,7 @@ import com.example.backend.dto.MeetingDetailResponse;
 import com.example.backend.dto.MeetingJoinRequestResponse;
 import com.example.backend.dto.MeetingListResponse;
 import com.example.backend.dto.MeetingMemberResponse;
+import com.example.backend.dto.MeetingMemberTimelineResponse;
 import com.example.backend.dto.MeetingSearchCondition;
 import com.example.backend.dto.MeetingUpdateRequest;
 import com.example.backend.enums.JoinRequestStatus;
@@ -181,6 +182,44 @@ public class MeetingService {
                 .orElseThrow(() -> new CustomException(ErrorCode.MEETING_REQUEST_NOT_FOUND));
 
         request.reject();
+    }
+
+    public List<MeetingMemberTimelineResponse> getMembers(Long meetingId, Long userId) {
+
+        Meeting meeting = getMeeting(meetingId);
+
+        validateHost(meetingId, userId);
+
+        List<MeetingMember> members = meetingMemberRepository.findAllByMeeting(meeting);
+
+        return members.stream()
+                .map(member -> MeetingMemberTimelineResponse.builder()
+                        .userId(member.getId())
+                        .nickname(member.getUser().getNickname()) // 또는 getName()
+                        .role(member.getRole())
+                        .joinedAt(member.getCreatedAt())
+                        .build()
+                )
+                .toList();
+    }
+
+    @Transactional
+    public void removeMember(Long meetingId, Long memberId, Long hostUserId) {
+
+        Meeting meeting = getMeeting(meetingId);
+
+        validateHost(meetingId, hostUserId);
+
+        MeetingMember member = meetingMemberRepository
+                .findByIdAndMeeting(memberId, meeting)
+                .orElseThrow(() ->
+                        new CustomException(ErrorCode.MEETING_MEMBER_NOT_FOUND));
+
+        if (member.getRole() == MeetingMemberRole.HOST) {
+            throw new CustomException(ErrorCode.MEETING_HOST_CANNOT_BE_REMOVED);
+        }
+
+        meetingMemberRepository.delete(member);
     }
 
     private Meeting getMeeting(Long meetingId) {

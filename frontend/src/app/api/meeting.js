@@ -192,7 +192,7 @@ export async function rejectJoinRequest(meetingId, requestId, token) {
 }
 
 /**
- * 모임 멤버 목록 조회
+ *    멤버 목록 조회
  */
 export async function getMeetingMembers(meetingId, token) {
   const res = await fetch(`${BASE_URL}/${meetingId}/manage/members`, {
@@ -216,7 +216,7 @@ export async function getMeetingMembers(meetingId, token) {
 }
 
 /**
- * 멤버 강퇴
+   멤버 강퇴
  */
 export async function removeMeetingMember(meetingId, memberId, token) {
   const res = await fetch(
