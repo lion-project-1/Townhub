@@ -1,6 +1,7 @@
 package com.example.backend.domain;
 
-import com.example.backend.enums.MeetingMemberRole;
+import com.example.backend.enums.ParticipantRole;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -25,39 +26,40 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Table(
-        name = "meeting_members",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"meeting_id", "user_id"})
-        }
+	name = "meeting_members",
+	uniqueConstraints = {
+		@UniqueConstraint(columnNames = {"meeting_id", "user_id"})
+	}
 )
 public class MeetingMember extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "meeting_id", nullable = false)
-    private Meeting meeting;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "meeting_id", nullable = false)
+	private Meeting meeting;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id", nullable = false)
+	private User user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private MeetingMemberRole role;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private ParticipantRole role;
 
-    protected MeetingMember(Meeting meeting, User user, MeetingMemberRole role) {
-        this.meeting = meeting;
-        this.user = user;
-        this.role = role;
-    }
-    public static MeetingMember createHost(Meeting meeting, User user) {
-        return new MeetingMember(meeting, user, MeetingMemberRole.HOST);
-    }
+	protected MeetingMember(Meeting meeting, User user, ParticipantRole role) {
+		this.meeting = meeting;
+		this.user = user;
+		this.role = role;
+	}
 
-    public static MeetingMember createMember(Meeting meeting, User user) {
-        return new MeetingMember(meeting, user, MeetingMemberRole.MEMBER);
-    }
+	public static MeetingMember createHost(Meeting meeting, User user) {
+		return new MeetingMember(meeting, user, ParticipantRole.HOST);
+	}
+
+	public static MeetingMember createMember(Meeting meeting, User user) {
+		return new MeetingMember(meeting, user, ParticipantRole.MEMBER);
+	}
 }

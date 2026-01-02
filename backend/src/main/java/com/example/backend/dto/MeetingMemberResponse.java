@@ -1,6 +1,7 @@
 package com.example.backend.dto;
 
-import com.example.backend.enums.MeetingMemberRole;
+import com.example.backend.enums.ParticipantRole;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,7 +11,7 @@ import lombok.Getter;
 @Builder
 public class MeetingMemberResponse {
 
-    private Long userId;
-    private String nickname;
-    private MeetingMemberRole role;
+	private Long userId;
+	private String nickname;
+	private ParticipantRole role;
 }
