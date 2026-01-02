@@ -24,8 +24,8 @@ public enum ErrorCode {
 	DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "USER_002", "이미 사용 중인 닉네임입니다."),
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_003", "존재하지 않는 사용자입니다."),
 
-    // Logout
-    LOGOUT_DONE(HttpStatus.UNAUTHORIZED, "LOGOUT_001", "로그아웃 되었습니다."),
+	// Logout
+	LOGOUT_DONE(HttpStatus.UNAUTHORIZED, "LOGOUT_001", "로그아웃 되었습니다."),
 
 	// TOKEN
 	TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "TOKEN_001", "토큰이 만료되었습니다."),
@@ -56,10 +56,11 @@ public enum ErrorCode {
 	MEETING_HOST_ONLY(HttpStatus.FORBIDDEN, "MEETING-004", "방장만 접근할 수 있습니다."),
 	ALREADY_MEETING_REQUESTED(HttpStatus.BAD_REQUEST, "MEETING-005", "이미 모임에 신청하셨습니다."),
 	MEETING_IS_FULL(HttpStatus.BAD_REQUEST, "MEETING-006", "이미 모임의 정원이 초과되었습니다."),
-	ALREADY_MEETING_MEMBER(HttpStatus.BAD_REQUEST, "MEETING-007", "이미 모임의 멤버입니다.")
+	ALREADY_MEETING_MEMBER(HttpStatus.BAD_REQUEST, "MEETING-007", "이미 모임의 멤버입니다."),
 
-
-	;
+	// Event,
+	INVALID_EVENT_CAPACITY(HttpStatus.BAD_REQUEST, "EVENT-001", "이벤트의 인원 범위는 2~100명 사이입니다."),
+	INVALID_EVENT_START_AT(HttpStatus.BAD_REQUEST, "EVENT-002", "이벤트 시작 시간은 현재 시각 이후여야 합니다.");;
 
 	private final HttpStatus status;
 	private final String code;
