@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save } from 'lucide-react';
 
-const CATEGORIES = ['축제', '봉사', '문화', '체육', '교육', '기타'];
+const CATEGORIES = ['축제', '봉사', '문화', '체육', '교육', '기타', '번개'];
 
 export default function EventNewPage() {
   const router = useRouter();
@@ -17,16 +17,93 @@ export default function EventNewPage() {
     maxParticipants: '',
     description: '',
   });
+  const [errors, setErrors] = useState({});
+  const [timeWarning, setTimeWarning] = useState('');
+
+  // 오늘 날짜를 YYYY-MM-DD 형식으로 반환
+  const getTodayDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // 번개 카테고리 선택 시 날짜를 오늘로 자동 설정
+  useEffect(() => {
+    if (formData.category === '번개' && formData.date !== getTodayDateString()) {
+      setFormData((prev) => ({
+        ...prev,
+        date: getTodayDateString(),
+      }));
+    }
+  }, [formData.category]);
+
+  // 시간 경고 체크
+  useEffect(() => {
+    if (formData.category === '번개' && formData.date && formData.time) {
+      const today = new Date();
+      const [hours, minutes] = formData.time.split(':').map(Number);
+      const selectedTime = new Date(today);
+      selectedTime.setHours(hours, minutes, 0, 0);
+
+      if (selectedTime < today) {
+        setTimeWarning('선택한 시간이 현재 시간보다 과거입니다.');
+      } else {
+        setTimeWarning('');
+      }
+    } else {
+      setTimeWarning('');
+    }
+  }, [formData.category, formData.date, formData.time]);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    // 번개 카테고리에서 날짜 변경 시 검증
+    if (name === 'date' && formData.category === '번개') {
+      const today = getTodayDateString();
+      if (value !== today) {
+        setErrors((prev) => ({
+          ...prev,
+          date: '번개 이벤트는 당일에만 생성할 수 있어요.',
+        }));
+        return;
+      } else {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.date;
+          return newErrors;
+        });
+      }
+    }
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // 번개 카테고리 검증
+    if (formData.category === '번개') {
+      const today = getTodayDateString();
+      if (formData.date !== today) {
+        setErrors((prev) => ({
+          ...prev,
+          date: '번개 이벤트는 당일에만 생성할 수 있어요.',
+        }));
+        return;
+      }
+    }
+
+    // 에러가 있으면 제출 차단
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
     router.push('/town/events/1');
   };
 
@@ -76,9 +153,23 @@ export default function EventNewPage() {
                   name="date"
                   value={formData.date}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min={formData.category === '번개' ? getTodayDateString() : undefined}
+                  max={formData.category === '번개' ? getTodayDateString() : undefined}
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                    errors.date
+                      ? 'border-red-300 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-blue-500'
+                  }`}
                   required
                 />
+                {formData.category === '번개' && (
+                  <p className="text-sm text-blue-600 mt-1">
+                    번개 이벤트는 당일에만 생성할 수 있어요.
+                  </p>
+                )}
+                {errors.date && (
+                  <p className="text-sm text-red-600 mt-1">{errors.date}</p>
+                )}
               </div>
 
               <div>
@@ -91,6 +182,9 @@ export default function EventNewPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
+                {timeWarning && (
+                  <p className="text-sm text-orange-600 mt-1">{timeWarning}</p>
+                )}
               </div>
             </div>
 
