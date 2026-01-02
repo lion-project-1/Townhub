@@ -5,6 +5,7 @@ import com.example.backend.dto.MeetingCreateRequest;
 import com.example.backend.dto.MeetingCreateResponse;
 import com.example.backend.dto.MeetingDetailResponse;
 import com.example.backend.dto.MeetingJoinRequestDto;
+import com.example.backend.dto.MeetingJoinRequestResponse;
 import com.example.backend.dto.MeetingListResponse;
 import com.example.backend.dto.MeetingSearchCondition;
 import com.example.backend.dto.MeetingUpdateRequest;
@@ -12,6 +13,7 @@ import com.example.backend.enums.MeetingStatus;
 import com.example.backend.global.response.ApiResponse;
 import com.example.backend.service.MeetingService;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -96,5 +98,34 @@ public class MeetingController {
         meetingService.requestJoin(meetingId, user.getId(), message);
 
         return ResponseEntity.ok(ApiResponse.success("모임 가입이 신청되었습니다.", null));
+    }
+
+    @GetMapping("/{meetingId}/manage/join-requests")
+    public ApiResponse<List<MeetingJoinRequestResponse>> getJoinRequests(
+            @PathVariable Long meetingId,
+            @AuthenticationPrincipal User user ) {
+
+        List<MeetingJoinRequestResponse> joinRequests = meetingService.getJoinRequests(meetingId, user.getId());
+        return ApiResponse.success(joinRequests);
+    }
+
+    @PostMapping("/{meetingId}/manage/join-requests/{requestId}/approve")
+    public ApiResponse<Void> approve(
+            @PathVariable Long meetingId,
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal User user ) {
+
+        meetingService.approveJoinRequest(meetingId, requestId, user.getId());
+        return ApiResponse.success();
+    }
+
+    @PostMapping("/{meetingId}/manage/join-requests/{requestId}/reject")
+    public ApiResponse<Void> reject(
+            @PathVariable Long meetingId,
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal User user
+    ) {
+        meetingService.rejectJoinRequest(meetingId, requestId, user.getId());
+        return ApiResponse.success();
     }
 }

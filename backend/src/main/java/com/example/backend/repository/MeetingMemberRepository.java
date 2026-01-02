@@ -14,4 +14,6 @@ public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Lo
     );
 
     boolean existsByMeetingAndUser(Meeting meeting, User user);
+
+    long countByMeeting(Meeting meeting);
 }

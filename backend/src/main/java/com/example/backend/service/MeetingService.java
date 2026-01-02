@@ -2,7 +2,6 @@ package com.example.backend.service;
 
 import static com.example.backend.mapper.MeetingMapper.toMeeting;
 import static com.example.backend.mapper.MeetingMapper.toMeetingDetailResponse;
-import static com.example.backend.mapper.MeetingMapper.toMeetingMemberResponse;
 
 import com.example.backend.common.annotation.MeasureTime;
 import com.example.backend.domain.Location;
@@ -12,13 +11,13 @@ import com.example.backend.domain.MeetingMember;
 import com.example.backend.domain.User;
 import com.example.backend.dto.MeetingCreateRequest;
 import com.example.backend.dto.MeetingDetailResponse;
+import com.example.backend.dto.MeetingJoinRequestResponse;
 import com.example.backend.dto.MeetingListResponse;
 import com.example.backend.dto.MeetingMemberResponse;
 import com.example.backend.dto.MeetingSearchCondition;
 import com.example.backend.dto.MeetingUpdateRequest;
 import com.example.backend.enums.JoinRequestStatus;
 import com.example.backend.enums.MeetingMemberRole;
-import com.example.backend.enums.MeetingStatus;
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
 import com.example.backend.mapper.MeetingMapper;
@@ -29,6 +28,7 @@ import com.example.backend.repository.MeetingRepository;
 import com.example.backend.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -37,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class MeetingService {
 
     private final MeetingRepository meetingRepository;
@@ -48,8 +49,7 @@ public class MeetingService {
     @Transactional
     public Long createMeeting(Long userId, MeetingCreateRequest request) {
 
-        User host = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User host =  getUser(userId);
 
         Location location = locationRepository.findById(request.getLocationId())
                 .orElseThrow(() -> new CustomException(ErrorCode.LOCATION_NOT_FOUND));
@@ -69,8 +69,7 @@ public class MeetingService {
             Long userId,
             MeetingUpdateRequest request) {
 
-        Meeting meeting = meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
+        Meeting meeting = getMeeting(meetingId);
 
         validateHost(meetingId, userId);
 
@@ -87,8 +86,7 @@ public class MeetingService {
     @Transactional(readOnly = true)
     public MeetingDetailResponse getMeetingDetail(Long meetingId) {
 
-        Meeting meeting = meetingRepository.findDetailWithMembersById(meetingId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
+        Meeting meeting = getMeeting(meetingId);
 
         List<MeetingMemberResponse> members = meeting.getMembers().stream()
                 .map(MeetingMapper::toMeetingMemberResponse)
@@ -100,11 +98,9 @@ public class MeetingService {
     @Transactional
     public void requestJoin(Long meetingId, Long userId, String message) {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User user = getUser(userId);
 
-        Meeting meeting = meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
+        Meeting meeting = getMeeting(meetingId);
 
         if (meetingMemberRepository.existsByMeetingAndUser(meeting, user)) {
             throw new CustomException(ErrorCode.ALREADY_MEETING_MEMBER);
@@ -114,13 +110,87 @@ public class MeetingService {
             throw new CustomException(ErrorCode.ALREADY_MEETING_REQUESTED);
         }
 
-        if (meeting.getMembers().size() >= meeting.getCapacity()) {
-            throw new CustomException(ErrorCode.MEETING_IS_FULL);
-        }
+        checkMeetingCapacity(meeting);
 
         MeetingJoinRequest joinRequest = getMeetingJoinRequest(message, meeting, user);
 
         meetingJoinRequestRepository.save(joinRequest);
+    }
+
+    private void checkMeetingCapacity(Meeting meeting) {
+        if (meetingMemberRepository.countByMeeting(meeting) >= meeting.getCapacity()) {
+            throw new CustomException(ErrorCode.MEETING_IS_FULL);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<MeetingJoinRequestResponse> getJoinRequests(Long meetingId, Long hostUserId ) {
+
+        Meeting meeting = getMeeting(meetingId);
+        User host = getUser(hostUserId);
+
+        validateHost(meetingId, hostUserId);
+
+        return meetingJoinRequestRepository
+                .findByMeetingAndStatus(meeting, JoinRequestStatus.PENDING)
+                .stream()
+                .map(req -> new MeetingJoinRequestResponse(
+                        req.getId(),
+                        req.getUser().getId(),
+                        req.getUser().getNickname(),
+                        req.getMessage(),
+                        req.getCreatedAt()
+                ))
+                .toList();
+    }
+
+    @Transactional
+    @MeasureTime
+    public void approveJoinRequest(Long meetingId, Long requestId, Long hostUserId) {
+        Meeting meeting = getMeeting(meetingId);
+        User host = getUser(hostUserId);
+
+        validateHost(meetingId, hostUserId);
+
+        log.info("여기 체크");
+
+        checkMeetingCapacity(meeting);
+
+        MeetingJoinRequest request = meetingJoinRequestRepository
+                .findByIdAndMeeting(requestId, meeting)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_REQUEST_NOT_FOUND));
+
+        if (meetingMemberRepository.existsByMeetingAndUser(meeting, request.getUser())) {
+            request.approve();
+            return;
+        }
+
+        request.approve();
+
+        meetingMemberRepository.save(MeetingMember.createMember(meeting, request.getUser()));
+    }
+
+
+    @Transactional
+    public void rejectJoinRequest(Long meetingId, Long requestId, Long hostUserId) {
+        Meeting meeting = getMeeting(meetingId);
+        validateHost(meetingId, hostUserId);
+
+        MeetingJoinRequest request = meetingJoinRequestRepository
+                .findByIdAndMeeting(requestId, meeting)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_REQUEST_NOT_FOUND));
+
+        request.reject();
+    }
+
+    private Meeting getMeeting(Long meetingId) {
+        return meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
+    }
+
+    private User getUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
     private static MeetingJoinRequest getMeetingJoinRequest(String message, Meeting meeting, User user) {
