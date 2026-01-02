@@ -57,7 +57,12 @@ public enum ErrorCode {
 	MEETING_MEMBER_FORBIDDEN(HttpStatus.FORBIDDEN, "MEETING-003", "모임 멤버만 접근할 수 있습니다."),
 	MEETING_HOST_ONLY(HttpStatus.FORBIDDEN, "MEETING-004", "방장만 접근할 수 있습니다."),
 
-	;
+    // MYPAGE
+    MYPAGE_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MYPAGE-001", "회원이 없습니다."),
+    MYPAGE_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "MYPAGE-002", "인증 정보가 없습니다."),
+
+
+    ;
 
 	private final HttpStatus status;
 	private final String code;

@@ -47,4 +47,10 @@ public class Member {
     public void withdraw() {
         this.deleted = true;
         this.deletedAt = LocalDateTime.now();
-    }}
+    }
+    public void softDelete() {
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+}

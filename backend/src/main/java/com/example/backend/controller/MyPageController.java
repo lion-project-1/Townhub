@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import com.example.backend.exception.BadRequestException;
+import com.example.backend.global.response.ApiResponse;
+import org.springframework.http.ResponseEntity;
 
 
 
@@ -21,40 +23,33 @@ public class MyPageController {
 
 
     @GetMapping
-    public MyPageResponse getMyPage(
-            @AuthenticationPrincipal UserDetails user,
-            @RequestHeader(value = "X-USER-EMAIL", required = false) String email
+    public ResponseEntity<ApiResponse<MyPageResponse>> getMyPage(
+            @AuthenticationPrincipal UserDetails userDetails
     ) {
-        String targetEmail = (user != null) ? user.getUsername() : email;
-        if (targetEmail == null || targetEmail.isBlank()) {
-            throw new BadRequestException("인증 정보가 없습니다. (Authorization 또는 X-USER-EMAIL 필요)");
-        }
-        return myPageService.getMyPage(targetEmail);
+        MyPageResponse response =
+                myPageService.getMyPage(userDetails.getUsername());
+
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PutMapping
-    public void updateMyPage(
-            @AuthenticationPrincipal UserDetails user,
-            @RequestHeader(value = "X-USER-EMAIL", required = false) String email,
-            @Valid @RequestBody MyPageUpdateRequest request
+    public ResponseEntity<ApiResponse<Void>> updateMyPage(
+            @RequestBody @Valid MyPageUpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
     ) {
-        String targetEmail = (user != null) ? user.getUsername() : email;
-        if (targetEmail == null || targetEmail.isBlank()) {
-            throw new BadRequestException("인증 정보가 없습니다. (Authorization 또는 X-USER-EMAIL 필요)");
-        }
-        myPageService.updateMyPage(targetEmail, request);
+        myPageService.updateMyPage(userDetails.getUsername(), request);
+
+        return ResponseEntity.ok(
+                ApiResponse.success("내 정보 수정 완료", null));
     }
 
 
+
     @DeleteMapping
-    public void withdraw(
-            @AuthenticationPrincipal UserDetails user,
-            @RequestHeader(value = "X-USER-EMAIL", required = false) String email
+    public ResponseEntity<ApiResponse<Void>> withdraw(
+            @AuthenticationPrincipal UserDetails userDetails
     ) {
-        String targetEmail = (user != null) ? user.getUsername() : email;
-        if (targetEmail == null || targetEmail.isBlank()) {
-            throw new BadRequestException("인증 정보가 없습니다. (Authorization 또는 X-USER-EMAIL 필요)");
-        }
-        myPageService.withdraw(targetEmail);
+        myPageService.withdraw(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("회원 탈퇴 완료", null));
     }
 }

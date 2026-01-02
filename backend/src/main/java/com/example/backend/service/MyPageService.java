@@ -3,8 +3,8 @@ package com.example.backend.service;
 import com.example.backend.domain.Member;
 import com.example.backend.dto.MyPageResponse;
 import com.example.backend.dto.MyPageUpdateRequest;
-import com.example.backend.exception.BadRequestException;
-import com.example.backend.exception.NotFoundException;
+import com.example.backend.global.exception.custom.CustomException;
+import com.example.backend.global.exception.custom.ErrorCode;
 import com.example.backend.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,25 +19,38 @@ public class MyPageService {
 
     @Transactional(readOnly = true)
     public MyPageResponse getMyPage(String email) {
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("회원이 없습니다."));
+
+        if (email == null || email.isBlank()) {
+            throw new CustomException(ErrorCode.MYPAGE_UNAUTHORIZED);
+        }
+
+        Member member = memberRepository.findByEmailAndDeletedFalse(email)
+                .orElseThrow(() ->
+                                new CustomException(ErrorCode.MYPAGE_MEMBER_NOT_FOUND)
+                );
+
         return new MyPageResponse(
                 member.getEmail(),
                 member.getNickname(),
                 member.getProfileImage(),
                 member.getIntroduction()
-
         );
     }
 
     public void updateMyPage(String email, MyPageUpdateRequest request) {
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("회원이 없습니다."));
 
-        // 닉네임 중복 체크 (자기 자신은 허용)
+        if (email == null || email.isBlank()) {
+            throw new CustomException(ErrorCode.MYPAGE_UNAUTHORIZED);
+        }
+
+        Member member = memberRepository.findByEmailAndDeletedFalse(email)
+                .orElseThrow(() ->
+                        new CustomException(ErrorCode.MYPAGE_MEMBER_NOT_FOUND)
+                );
+
         if (!member.getNickname().equals(request.getNickname())
-                && memberRepository.existsByNickname(request.getNickname())) {
-            throw new BadRequestException("이미 사용 중인 닉네임입니다.");
+                && memberRepository.existsByNicknameAndDeletedFalse(request.getNickname())) {
+            throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
         }
 
         member.updateProfile(
@@ -46,15 +59,19 @@ public class MyPageService {
                 request.getIntroduction()
         );
     }
-    public void withdraw(String email) {
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("회원이 없습니다."));
 
-        if (member.isDeleted()) {
-            throw new BadRequestException("이미 탈퇴한 회원입니다.");
+    public void withdraw(String email) {
+
+        if (email == null || email.isBlank()) {
+            throw new CustomException(ErrorCode.MYPAGE_UNAUTHORIZED);
         }
+
+        Member member = memberRepository.findByEmailAndDeletedFalse(email)
+                .orElseThrow(() ->
+                        new CustomException(ErrorCode.MYPAGE_MEMBER_NOT_FOUND)
+                );
 
         member.withdraw(); // deleted = true
     }
-
 }
+
