@@ -114,3 +114,129 @@ export async function requestJoinMeeting(meetingId, token, message) {
 
   return data;
 }
+
+/**
+ * 가입 신청 목록 조회 (HOST 전용)
+ */
+export async function getJoinRequests(meetingId, token) {
+  const res = await fetch(`${BASE_URL}/${meetingId}/manage/join-requests`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    credentials: "include",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const error = new Error("가입 신청 목록 조회 실패");
+    error.response = { data };
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * 가입 신청 승인
+ */
+export async function approveJoinRequest(meetingId, requestId, token) {
+  const res = await fetch(
+    `${BASE_URL}/${meetingId}/manage/join-requests/${requestId}/approve`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: "include",
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const error = new Error("가입 승인 실패");
+    error.response = { data };
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * 가입 신청 거절
+ */
+export async function rejectJoinRequest(meetingId, requestId, token) {
+  const res = await fetch(
+    `${BASE_URL}/${meetingId}/manage/join-requests/${requestId}/reject`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: "include",
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const error = new Error("가입 거절 실패");
+    error.response = { data };
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * 모임 멤버 목록 조회
+ */
+export async function getMeetingMembers(meetingId, token) {
+  const res = await fetch(`${BASE_URL}/${meetingId}/manage/members`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    credentials: "include",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const error = new Error("멤버 목록 조회 실패");
+    error.response = { data };
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * 멤버 강퇴
+ */
+export async function removeMeetingMember(meetingId, memberId, token) {
+  const res = await fetch(
+    `${BASE_URL}/${meetingId}/manage/members/${memberId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: "include",
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const error = new Error("멤버 강퇴 실패");
+    error.response = { data };
+    throw error;
+  }
+
+  return data;
+}
