@@ -106,6 +106,7 @@ public class Meeting extends BaseEntity{
         }
     }
 
+
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
     }

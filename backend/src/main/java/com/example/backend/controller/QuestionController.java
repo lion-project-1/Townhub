@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 
+import com.example.backend.domain.User;
 import com.example.backend.dto.QuestionCreateRequest;
 import com.example.backend.dto.QuestionResponseRequest;
 
@@ -11,6 +12,7 @@ import com.example.backend.service.QuestionService;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -61,12 +63,11 @@ public class QuestionController {
     @PatchMapping("/{questionId}")
     public ResponseEntity<ApiResponse<Void>> updateQuestion(
             @PathVariable Long questionId,
-            @Valid @RequestBody QuestionUpdateRequest request
-            //@AuthenticationPrincipal CustomUserDetails user
+            @Valid @RequestBody QuestionUpdateRequest request,
+            @AuthenticationPrincipal User user
     ) {
-        Long tmpUserId = 1L;
 
-        questionService.updateQuestion(questionId, tmpUserId, request);
+        questionService.updateQuestion(questionId, user.getId(), request);
 
         return ResponseEntity.ok(ApiResponse.success("질문이 수정되었습니다."));
     }
@@ -74,12 +75,11 @@ public class QuestionController {
 
     @DeleteMapping("/{questionId}")
     public ResponseEntity<ApiResponse<Void>> deleteQuestion(
-            @PathVariable Long questionId
-            //@AuthenticationPrincipal CustomUserDetails user
+            @PathVariable Long questionId,
+            @AuthenticationPrincipal User user
     ) {
-        Long tmpUserId = 1L;
 
-        questionService.deleteQuestion(questionId, tmpUserId);
+        questionService.deleteQuestion(questionId, user.getId());
         return ResponseEntity.ok(ApiResponse.success("질문이 삭제되었습니다."));
     }
 }

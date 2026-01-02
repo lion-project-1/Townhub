@@ -7,6 +7,7 @@ import static com.example.backend.mapper.MeetingMapper.toMeetingMemberResponse;
 import com.example.backend.common.annotation.MeasureTime;
 import com.example.backend.domain.Location;
 import com.example.backend.domain.Meeting;
+import com.example.backend.domain.MeetingJoinRequest;
 import com.example.backend.domain.MeetingMember;
 import com.example.backend.domain.User;
 import com.example.backend.dto.MeetingCreateRequest;
@@ -15,6 +16,7 @@ import com.example.backend.dto.MeetingListResponse;
 import com.example.backend.dto.MeetingMemberResponse;
 import com.example.backend.dto.MeetingSearchCondition;
 import com.example.backend.dto.MeetingUpdateRequest;
+import com.example.backend.enums.JoinRequestStatus;
 import com.example.backend.enums.MeetingMemberRole;
 import com.example.backend.enums.MeetingStatus;
 import com.example.backend.global.exception.custom.CustomException;
@@ -93,6 +95,41 @@ public class MeetingService {
                 .toList();
 
         return toMeetingDetailResponse(meeting, members);
+    }
+
+    @Transactional
+    public void requestJoin(Long meetingId, Long userId, String message) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        Meeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
+
+        if (meetingMemberRepository.existsByMeetingAndUser(meeting, user)) {
+            throw new CustomException(ErrorCode.ALREADY_MEETING_MEMBER);
+        }
+
+        if (meetingJoinRequestRepository.existsByMeetingAndUser(meeting, user)) {
+            throw new CustomException(ErrorCode.ALREADY_MEETING_REQUESTED);
+        }
+
+        if (meeting.getMembers().size() >= meeting.getCapacity()) {
+            throw new CustomException(ErrorCode.MEETING_IS_FULL);
+        }
+
+        MeetingJoinRequest joinRequest = getMeetingJoinRequest(message, meeting, user);
+
+        meetingJoinRequestRepository.save(joinRequest);
+    }
+
+    private static MeetingJoinRequest getMeetingJoinRequest(String message, Meeting meeting, User user) {
+        return MeetingJoinRequest.builder()
+                .meeting(meeting)
+                .user(user)
+                .message(message)
+                .status(JoinRequestStatus.PENDING)
+                .build();
     }
 
     public Page<MeetingListResponse> getMeetingList(MeetingSearchCondition condition, Pageable pageable) {
