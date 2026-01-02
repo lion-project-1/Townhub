@@ -5,6 +5,7 @@ import com.example.backend.global.exception.security.JwtAuthenticationEntryPoint
 import com.example.backend.global.exception.security.JwtExceptionFilter;
 import com.example.backend.global.exception.security.SecurityErrorResponseWriter;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.security.cookie.RefreshTokenCookieManager;
 import com.example.backend.security.jwt.JwtAuthenticationFilter;
 import com.example.backend.security.jwt.JwtProvider;
 import lombok.RequiredArgsConstructor;
@@ -24,20 +25,18 @@ import java.util.List;
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final JwtProvider jwtProvider;
-    private final UserRepository userRepository;
-    private final SecurityErrorResponseWriter securityErrorResponseWriter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(
+            HttpSecurity http, JwtExceptionFilter jwtExceptionFilter, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // OPTIONS 요청은 인증 없이 허용
-                        .requestMatchers("/api/users/login", "/api/users/signup", "/api/users/token/reissue").permitAll()
+                        .requestMatchers("/api/users/login", "/api/users/signup", "/api/users/token/reissue", "/api/users/logout").permitAll()
                         .anyRequest().authenticated()
                 )
 
@@ -54,11 +53,6 @@ public class SecurityConfig {
                         .accessDeniedHandler(jwtAccessDeniedHandler) // 권한 없는 사용자 접근 시
                 );
 
-        // JWT 예외처리
-        JwtExceptionFilter jwtExceptionFilter = new JwtExceptionFilter(securityErrorResponseWriter);
-        // 토큰 유효한지
-        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtProvider, userRepository);
-
         // JwtExceptionFilter -> JwtAuthenticationFilter
         http.addFilterBefore(jwtExceptionFilter, UsernamePasswordAuthenticationFilter.class); // SecurityContext 에 들어가기 전에 JWT 예외를 먼저 처리
         http.addFilterAfter(jwtAuthenticationFilter, JwtExceptionFilter.class); // JWT 토큰을 파싱하고 인증 처리
@@ -72,12 +66,12 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
         // 허용 도메인
         configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:3000", "http://localhost:8080"
+                "http://localhost:3000"
         ));
 
         // 허용 HTTP 메서드
         configuration.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
         ));
 
         // 허용 헤더
@@ -86,17 +80,25 @@ public class SecurityConfig {
         ));
 
         // 노출 헤더
-        configuration.setExposedHeaders(List.of(
-                "Authorization"
-        ));
-
-        // 쿠키 허용
-        configuration.setAllowCredentials(true);
+//        configuration.setExposedHeaders(List.of(
+//                "Authorization"
+//        ));
 
         configuration.setMaxAge(3600L); // 캐시 시간
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration); // 모든 API 적용
 
         return source;
+    }
+
+    @Bean
+    public JwtExceptionFilter jwtExceptionFilter(
+            SecurityErrorResponseWriter writer, RefreshTokenCookieManager cookieManager) {
+        return new JwtExceptionFilter(writer, cookieManager);
+    }
+
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtProvider jwtProvider, UserRepository userRepository) {
+        return new JwtAuthenticationFilter(jwtProvider, userRepository);
     }
 }
