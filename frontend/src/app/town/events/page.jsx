@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Calendar, Search, Plus, MapPin, Users, Clock } from 'lucide-react';
+import { Calendar, Search, Plus } from 'lucide-react';
+import TodayFlashSection from '@/app/components/TodayFlashSection';
+import EventCard from '@/app/components/EventCard';
+import { getTodayFlashEvents } from '@/app/mocks/todayFlashEvents';
 
 const CATEGORIES = ['전체', '축제', '봉사', '문화', '체육', '교육', '기타'];
 
@@ -57,6 +60,10 @@ export default function EventListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('전체');
 
+  // 오늘의 번개 이벤트 가져오기
+  // [개발용 임시 데이터] 추후 API 연동 시 이 부분을 API 호출로 교체 예정
+  const todayFlashEvents = getTodayFlashEvents();
+
   const filteredEvents = MOCK_EVENTS.filter((event) => {
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === '전체' || event.category === selectedCategory;
@@ -89,6 +96,9 @@ export default function EventListPage() {
             </Link>
           </div>
         </div>
+
+        {/* 오늘의 번개 섹션 */}
+        <TodayFlashSection events={todayFlashEvents} />
 
         {/* Search and Filters */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
@@ -126,52 +136,7 @@ export default function EventListPage() {
         {/* Events List */}
         <div className="space-y-4">
           {filteredEvents.map((event) => (
-            <Link
-              key={event.id}
-              href={`/town/events/${event.id}`}
-              className="block bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow"
-            >
-              <div className="flex gap-6">
-                {/* Date Badge */}
-                <div className="flex-shrink-0 w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex flex-col items-center justify-center text-white">
-                  <div className="text-2xl">{new Date(event.date).getDate()}</div>
-                  <div className="text-xs">
-                    {new Date(event.date).toLocaleString('ko-KR', { month: 'short' })}
-                  </div>
-                </div>
-
-                {/* Event Info */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <h2 className="text-gray-900">{event.title}</h2>
-                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded">
-                      {event.category}
-                    </span>
-                  </div>
-                  <p className="text-gray-600 mb-4">{event.description}</p>
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>{event.date}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{event.time}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      <span>{event.location}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Users className="w-4 h-4" />
-                      <span>
-                        {event.participants}/{event.maxParticipants}명
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Link>
+            <EventCard key={event.id} event={event} />
           ))}
         </div>
 

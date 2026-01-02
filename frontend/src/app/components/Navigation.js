@@ -47,7 +47,7 @@ export default function Navigation() {
                   className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100"
                 >
                   <MapPin className="w-4 h-4 text-gray-600" />
-                  <span className="text-gray-700">{selectedTown.name}</span>
+                  <span className="text-gray-700">{selectedTown.city}</span>
                 </Link>
               )}
 
