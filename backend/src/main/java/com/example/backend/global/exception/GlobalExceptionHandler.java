@@ -6,6 +6,8 @@ import com.example.backend.global.exception.custom.ErrorCode;
 import com.example.backend.global.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -23,5 +25,22 @@ public class GlobalExceptionHandler {
                 .status(errorCode.getStatus())
                 .body(ApiResponse.fail(errorCode.getCode(), errorCode.getMessage()));
     }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException e) {
+
+        FieldError fieldError = e.getBindingResult().getFieldError();
+
+        String message = fieldError.getField() + " : " + fieldError.getDefaultMessage();
+
+        return ResponseEntity
+                .status(ErrorCode.INVALID_INPUT_VALUE.getStatus())
+                .body(ApiResponse.fail(
+                        ErrorCode.INVALID_INPUT_VALUE.getCode(),
+                        message
+                ));
+    }
+
 
 }
