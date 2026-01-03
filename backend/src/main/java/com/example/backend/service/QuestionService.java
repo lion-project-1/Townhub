@@ -13,9 +13,12 @@ import com.example.backend.repository.LocationRepository;
 import com.example.backend.repository.AnswerRepository;
 import com.example.backend.repository.QuestionRepository;
 import com.example.backend.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
-import java.util.List;
+
+import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 
 
@@ -31,8 +34,8 @@ public class QuestionService {
     private final LocationRepository locationRepository;
 
     // 질문 등록
-    @Transactional(readOnly = false)
-    public Long createQuestion(Long userId, QuestionCreateRequest request) {
+    @Transactional
+    public void createQuestion(Long userId, QuestionCreateRequest request) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자"));
@@ -54,19 +57,20 @@ public class QuestionService {
 
 
      // 질문 목록 조회
-    @Transactional(readOnly = true)
-    public List<QuestionResponseRequest> getQuestions() {
 
-        return questionRepository.findAll()
-                .stream()
-                .map(QuestionResponseRequest::new)
-                .toList();
+    // 질문 목록 조회 (페이지네이션)
+    public Page<QuestionResponseRequest> getQuestions(Pageable pageable) {
+
+        return questionRepository.findAll(pageable)
+                .map(QuestionResponseRequest::new);
     }
 
-
     // 질문 상세
-    @Transactional(readOnly = true)
+    @Transactional
     public QuestionResponseRequest getQuestion(Long questionId) {
+
+        // 조회수 증가
+        questionRepository.increaseViewCount(questionId);
 
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new IllegalArgumentException("질문이 존재하지 않음"));
@@ -78,7 +82,6 @@ public class QuestionService {
     private final AnswerRepository answerRepository;
 
     @Transactional
-
     public void updateQuestion(Long questionId, Long loginUserId, QuestionUpdateRequest request) {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new CustomException(ErrorCode.QUESTION_NOT_FOUND));
