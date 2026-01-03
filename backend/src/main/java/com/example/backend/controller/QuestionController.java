@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 
+import com.example.backend.domain.User;
 import com.example.backend.dto.QuestionCreateRequest;
 import com.example.backend.dto.QuestionResponseRequest;
 
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -39,12 +41,14 @@ public class QuestionController {
 
     // 질문 생성
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> create(@RequestBody QuestionCreateRequest request) {
+    public ResponseEntity<ApiResponse<Long>> create(@RequestBody QuestionCreateRequest request
+                                                    //@AuthenticationPrincipal CustomUserDetails user
+    ) {
         Long tmpUserId = 1L;
 
-        questionService.createQuestion(tmpUserId, request);
+        Long questionId = questionService.createQuestion(tmpUserId, request);
 
-        return ResponseEntity.ok(ApiResponse.success("질문이 생성되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success(questionId));
     }
 
     // 질문 리스트
@@ -75,12 +79,11 @@ public class QuestionController {
     @PatchMapping("/{questionId}")
     public ResponseEntity<ApiResponse<Void>> updateQuestion(
             @PathVariable Long questionId,
-            @Valid @RequestBody QuestionUpdateRequest request
-            //@AuthenticationPrincipal CustomUserDetails user
+            @Valid @RequestBody QuestionUpdateRequest request,
+            @AuthenticationPrincipal User user
     ) {
-        Long tmpUserId = 1L;
 
-        questionService.updateQuestion(questionId, tmpUserId, request);
+        questionService.updateQuestion(questionId, user.getId(), request);
 
         return ResponseEntity.ok(ApiResponse.success("질문이 수정되었습니다."));
     }
@@ -88,12 +91,11 @@ public class QuestionController {
 
     @DeleteMapping("/{questionId}")
     public ResponseEntity<ApiResponse<Void>> deleteQuestion(
-            @PathVariable Long questionId
-            //@AuthenticationPrincipal CustomUserDetails user
+            @PathVariable Long questionId,
+            @AuthenticationPrincipal User user
     ) {
-        Long tmpUserId = 1L;
 
-        questionService.deleteQuestion(questionId, tmpUserId);
+        questionService.deleteQuestion(questionId, user.getId());
         return ResponseEntity.ok(ApiResponse.success("질문이 삭제되었습니다."));
     }
 }

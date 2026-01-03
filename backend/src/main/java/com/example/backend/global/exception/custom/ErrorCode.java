@@ -24,12 +24,15 @@ public enum ErrorCode {
 	DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "USER_002", "이미 사용 중인 닉네임입니다."),
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_003", "존재하지 않는 사용자입니다."),
 
+	// Logout
+	LOGOUT_DONE(HttpStatus.UNAUTHORIZED, "LOGOUT_001", "로그아웃 되었습니다."),
+
 	// TOKEN
 	TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "TOKEN_001", "토큰이 만료되었습니다."),
 	TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "TOKEN_002", "유효하지 않은 토큰입니다."),
 	TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "TOKEN_003", "토큰이 존재하지 않습니다."),
-	TOKEN_INTERNAL(HttpStatus.UNAUTHORIZED, "TOKEN_004", "토큰 필터 내부 문제"), // test 용
-	MASTER_USER_ID_NOT_FOUND(HttpStatus.UNAUTHORIZED, "TOKEN_005", "해당 유저 ID 가 없음"), // 에러 시, 환경변수 확인
+	TOKEN_INTERNAL(HttpStatus.INTERNAL_SERVER_ERROR, "TOKEN_004", "토큰 필터 내부 문제"), // test 용
+	MASTER_USER_ID_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "TOKEN_005", "해당 유저 ID 가 없음"), // 에러 시, 환경변수 확인
 
 	// QUESTION
 	QUESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "QUESTION-001", "존재하지 않는 질문입니다."),
@@ -51,8 +54,13 @@ public enum ErrorCode {
 	MEETING_NOT_FOUND(HttpStatus.NOT_FOUND, "MEETING-002", "해당 모임이 존재하지 않습니다."),
 	MEETING_MEMBER_FORBIDDEN(HttpStatus.FORBIDDEN, "MEETING-003", "모임 멤버만 접근할 수 있습니다."),
 	MEETING_HOST_ONLY(HttpStatus.FORBIDDEN, "MEETING-004", "방장만 접근할 수 있습니다."),
+	ALREADY_MEETING_REQUESTED(HttpStatus.BAD_REQUEST, "MEETING-005", "이미 모임에 신청하셨습니다."),
+	MEETING_IS_FULL(HttpStatus.BAD_REQUEST, "MEETING-006", "이미 모임의 정원이 초과되었습니다."),
+	ALREADY_MEETING_MEMBER(HttpStatus.BAD_REQUEST, "MEETING-007", "이미 모임의 멤버입니다."),
 
-	;
+	// Event,
+	INVALID_EVENT_CAPACITY(HttpStatus.BAD_REQUEST, "EVENT-001", "이벤트의 인원 범위는 2~100명 사이입니다."),
+	INVALID_EVENT_START_AT(HttpStatus.BAD_REQUEST, "EVENT-002", "이벤트 시작 시간은 현재 시각 이후여야 합니다.");;
 
 	private final HttpStatus status;
 	private final String code;

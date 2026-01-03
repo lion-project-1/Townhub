@@ -21,7 +21,7 @@ export default function QnaEditPage() {
   const router = useRouter();
   const { user } = useAuth();
   //const { user, token } = useAuth();
-  const token = "tmpToken";
+  const token = process.env.NEXT_PUBLIC_DEV_ACCESS_TOKEN;
 
   const isMyQuestion =
     params.id === "1" || params.id === "100" || params.id === "999";
@@ -49,11 +49,6 @@ export default function QnaEditPage() {
     }));
   };
 
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   router.push(`/town/qna/${params.id}`);
-  // };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -75,13 +70,6 @@ export default function QnaEditPage() {
     }
   };
 
-  // const handleDelete = () => {
-  //   if (confirm("정말로 이 질문을 삭제하시겠습니까?")) {
-  //     router.push("/town/qna");
-  //   }
-  // };
-
-  // ✅ 질문 삭제
   const handleDelete = async () => {
     console.log("삭제 버튼 클릭됨");
     if (!confirm("정말로 이 질문을 삭제하시겠습니까?")) return;

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Calendar, Users, Plus } from 'lucide-react';
+import TodayFlashSection from '@/app/components/TodayFlashSection';
+import { getTodayFlashEvents } from '@/app/mocks/todayFlashEvents';
 
 const MOCK_EVENTS = [
   {
@@ -30,6 +32,10 @@ const MOCK_EVENTS = [
 
 export default function EventCalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date(2025, 0, 1));
+
+  // 오늘의 번개 이벤트 가져오기
+  // [개발용 임시 데이터] 추후 API 연동 시 이 부분을 API 호출로 교체 예정
+  const todayFlashEvents = getTodayFlashEvents();
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -77,6 +83,9 @@ export default function EventCalendarPage() {
             </Link>
           </div>
         </div>
+
+        {/* 오늘의 번개 섹션 */}
+        <TodayFlashSection events={todayFlashEvents} />
 
         {/* Calendar */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">

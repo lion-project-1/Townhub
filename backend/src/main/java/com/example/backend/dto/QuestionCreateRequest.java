@@ -13,19 +13,17 @@ import lombok.*;
 @AllArgsConstructor
 // 요청 DTO (질문 등록)
 public class QuestionCreateRequest {
-    private Long Id;
     private String title;
     private String content;
     private QuestionCategory questionCategory;
-    private Long locationId;
     private Long userId;
+    private Location location;
 
     public QuestionCreateRequest(Question question) {
-        this.Id = question.getId();
         this.title = question.getTitle();
         this.content = question.getContent();
         this.questionCategory = question.getQuestionCategory();
-        this.locationId = question.getLocation().getId();
         this.userId = question.getUser().getId();
+        this.location = question.getUser().getLocation();
     }
 }

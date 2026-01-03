@@ -40,18 +40,18 @@ public class QuestionService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자"));
 
-        Location location = locationRepository.findById(request.getLocationId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역"));
 
         Question question = Question.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
                 .questionCategory(request.getQuestionCategory())
                 .user(user)
-                .location(location)
+                .location(user.getLocation())
                 .build();
 
         questionRepository.save(question);
+
+        return question.getId();
 
     }
 

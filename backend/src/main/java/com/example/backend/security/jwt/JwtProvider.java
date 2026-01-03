@@ -4,6 +4,7 @@ import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -31,13 +32,20 @@ public class JwtProvider {
     @Value("${jwt.master-user-id}")
     private String masterUserId;
 
+    private Key signingKey;
+
+    @PostConstruct
+    public void init() {
+        this.signingKey = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+    }
+
     public String createAccessToken(Long userId, String email) {
         return Jwts.builder()
-                .setSubject(String.valueOf(userId)) //
+                .setSubject(String.valueOf(userId))
                 .claim("email", email) // 토큰 해석 (이메일 씀)
                 .setIssuedAt(new Date()) // 발급 시점
                 .setExpiration(new Date(System.currentTimeMillis() + accessExpire)) // 만료 시점
-                .signWith(getKey()) // 서버만 알고 있는 key 로 위조방지
+                .signWith(getSigningKey()) // 서버만 알고 있는 key 로 위조방지
                 .compact();
     }
 
@@ -46,11 +54,11 @@ public class JwtProvider {
                 .setSubject(String.valueOf(userId))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + refreshExpire))
-                .signWith(getKey())
+                .signWith(getSigningKey())
                 .compact();
     }
 
-    public LocalDateTime getRefreshTokenExpiredAt() {
+    public LocalDateTime refreshTokenExpiresAt() {
         return LocalDateTime.now().plusSeconds(refreshExpire / 1000);
     }
 
@@ -65,7 +73,7 @@ public class JwtProvider {
         return Long.parseLong(masterUserId);
     }
 
-    protected Key getKey() {
-        return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+    protected Key getSigningKey() {
+        return signingKey;
     }
 }
