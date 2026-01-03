@@ -57,13 +57,15 @@ public enum ErrorCode {
 	ALREADY_MEETING_REQUESTED(HttpStatus.BAD_REQUEST, "MEETING-005", "이미 모임에 신청하셨습니다."),
 	MEETING_IS_FULL(HttpStatus.BAD_REQUEST, "MEETING-006", "이미 모임의 정원이 초과되었습니다."),
 	ALREADY_MEETING_MEMBER(HttpStatus.BAD_REQUEST, "MEETING-007", "이미 모임의 멤버입니다."),
-	MEETING_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND,"MEETING-008","모임 가입 신청을 찾을 수 없습니다."),
-	MEETING_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND,"MEETING-009","해당 멤버를 모임에서 조회할 수 없습니다."),
+	MEETING_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "MEETING-008", "모임 가입 신청을 찾을 수 없습니다."),
+	MEETING_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEETING-009", "해당 멤버를 모임에서 조회할 수 없습니다."),
 	MEETING_HOST_CANNOT_BE_REMOVED(HttpStatus.BAD_REQUEST, "MEETING-010", "방장은 내보낼 수 없습니다."),
 
 	// Event,
 	INVALID_EVENT_CAPACITY(HttpStatus.BAD_REQUEST, "EVENT-001", "이벤트의 인원 범위는 2~100명 사이입니다."),
-	INVALID_EVENT_START_AT(HttpStatus.BAD_REQUEST, "EVENT-002", "이벤트 시작 시간은 현재 시각 이후여야 합니다.");;
+	INVALID_EVENT_START_AT(HttpStatus.BAD_REQUEST, "EVENT-002", "이벤트 시작 시간은 현재 시각 이후여야 합니다."),
+	INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "EVENT-003", "시작 날짜는 종료 날짜보다 이후일 수 없습니다."),
+	EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "EVENT-004", "해당 이벤트가 존재하지 않습니다.");
 
 	private final HttpStatus status;
 	private final String code;
