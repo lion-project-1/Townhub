@@ -9,24 +9,25 @@ import {
   Bell,
   ArrowRight,
 } from "lucide-react";
+import { useEffect } from "react";
 import { useTown } from "@/app/contexts/TownContext";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function TownDashboard() {
+  const router = useRouter();
   const { selectedTown } = useTown();
   const { user } = useAuth();
 
-  if (!user || !selectedTown) {
-    return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">동네를 선택해주세요.</p>
-          <Link href="/town-select" className="text-blue-600 hover:underline">
-            동네 선택하기
-          </Link>
-        </div>
-      </div>
-    );
+  useEffect(() => {
+    if (!selectedTown) {
+      router.replace("/town-select");
+    }
+  }, [selectedTown, router]);
+
+  // ✅ 이동 중에는 아무것도 렌더링하지 않음
+  if (!selectedTown) {
+    return null;
   }
 
   return (

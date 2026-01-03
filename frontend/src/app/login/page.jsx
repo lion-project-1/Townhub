@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { useTown } from "@/app/contexts/TownContext";
 import { LogIn } from "lucide-react";
 
 export default function LoginPage() {
@@ -11,13 +12,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const { login } = useAuth();
   const router = useRouter();
+  const { selectedTown } = useTown();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     await login(email, password);
-    router.push("/town-select");
-  };
 
+    if (!selectedTown) {
+      router.push("/town-select");
+    } else {
+      router.back();
+    }
+  };
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full">

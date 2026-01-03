@@ -19,12 +19,14 @@ import { getMeetingDetail, requestJoinMeeting } from "@/app/api/meeting";
 export default function GroupDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
+
   const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
-  // ✅ 가입 메시지 관련 상태
+  // 가입 메시지 모달 상태
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinMessage, setJoinMessage] = useState("");
 
@@ -42,26 +44,37 @@ export default function GroupDetailPage() {
     };
 
     loadGroup();
-  }, [params.id, router]);
+  }, [params.id, router, token]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return <div className="p-8">로딩 중...</div>;
   }
 
   if (!group) return null;
 
+  // =========================
+  // 권한 / 상태 계산 (수정된 핵심 로직)
+  // =========================
   const host = group.members.find((m) => m.role === "HOST");
-  const isLeader = user?.id === host?.userId;
-  const isJoined = group.members.some((m) => m.userId === user?.id);
+
+  const isLoggedIn = !!user;
+  const isLeader = isLoggedIn && user.id === host?.userId;
+  const isJoined =
+    isLoggedIn && group.members.some((m) => m.userId === user.id);
 
   const isFull = group.members.length >= group.capacity;
   const isRecruitingClosed = group.status === "ACTIVE";
-  const canJoin = !isJoined && !isFull && !isRecruitingClosed;
+  const canJoin = isLoggedIn && !isJoined && !isFull && !isRecruitingClosed;
 
   const handleJoinSubmit = async () => {
+    if (!user) {
+      alert("로그인이 필요합니다.");
+      router.push("/login");
+      return;
+    }
+
     try {
       await requestJoinMeeting(params.id, token /*, joinMessage */);
-
       alert("가입 신청이 완료되었습니다.");
       setShowJoinModal(false);
       setJoinMessage("");
@@ -74,22 +87,18 @@ export default function GroupDetailPage() {
       switch (code) {
         case "MEETING-005":
           alert("이미 모임에 신청하셨습니다.");
-          setShowJoinModal(false);
           break;
-
         case "MEETING-007":
           alert("이미 모임에 참여 중입니다.");
-          setShowJoinModal(false);
           break;
-
         case "MEETING-006":
           alert("모임 정원이 가득 찼습니다.");
-          setShowJoinModal(false);
           break;
-
         default:
           alert("가입 신청 중 오류가 발생했습니다.");
       }
+
+      setShowJoinModal(false);
     }
   };
 
@@ -140,6 +149,13 @@ export default function GroupDetailPage() {
                     관리
                   </Link>
                 </>
+              ) : !isLoggedIn ? (
+                <button
+                  onClick={() => router.push("/login")}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                >
+                  로그인 후 가입 가능
+                </button>
               ) : (
                 <button
                   disabled={!canJoin}
@@ -219,7 +235,7 @@ export default function GroupDetailPage() {
         </div>
       </div>
 
-      {/* ✅ 가입 메시지 모달 */}
+      {/* 가입 메시지 모달 */}
       {showJoinModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl w-full max-w-md p-6 relative">

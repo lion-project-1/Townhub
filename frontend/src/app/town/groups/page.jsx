@@ -6,6 +6,7 @@ import { Users, Search, Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getMeetingList } from "@/app/api/meeting";
 import { useTown } from "@/app/contexts/TownContext";
+import { useAuth } from "@/app/contexts/AuthContext"; // ✅ 추가
 
 const CATEGORIES = [
   { label: "전체", value: null },
@@ -27,6 +28,7 @@ export default function GroupListPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectedTown } = useTown();
+  const { user } = useAuth(); // ✅ 추가
   const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
   /* =========================
@@ -71,20 +73,14 @@ export default function GroupListPage() {
   };
 
   /* =========================
-     목록 조회 (⭐ 핵심 수정)
+     목록 조회
   ========================= */
   useEffect(() => {
-    // ✅ selectedTown 준비 전에는 호출하지 않음
     if (!selectedTown) return;
 
     const loadGroups = async () => {
       try {
         setLoading(true);
-
-        console.log("API params:", {
-          province: selectedTown.province,
-          city: selectedTown.city,
-        });
 
         const result = await getMeetingList(
           {
@@ -92,8 +88,8 @@ export default function GroupListPage() {
             category: selectedCategory,
             status: selectedStatus,
             keyword: searchKeyword,
-            province: selectedTown.province, // ✅ null 제거
-            city: selectedTown.city, // ✅ null 제거
+            province: selectedTown.province,
+            city: selectedTown.city,
           },
           token
         );
@@ -108,7 +104,14 @@ export default function GroupListPage() {
     };
 
     loadGroups();
-  }, [page, selectedCategory, selectedStatus, searchKeyword, selectedTown]);
+  }, [
+    page,
+    selectedCategory,
+    selectedStatus,
+    searchKeyword,
+    selectedTown,
+    token,
+  ]);
 
   /* =========================
      검색 실행
@@ -134,13 +137,16 @@ export default function GroupListPage() {
             </p>
           </div>
 
-          <Link
-            href="/town/groups/new"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            모임 만들기
-          </Link>
+          {/* ✅ 로그인한 경우에만 노출 */}
+          {user && (
+            <Link
+              href="/town/groups/new"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              모임 만들기
+            </Link>
+          )}
         </div>
 
         {/* Search & Filters */}
@@ -273,12 +279,14 @@ export default function GroupListPage() {
           <div className="text-center py-20">
             <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-600 mb-4">검색 결과가 없습니다.</p>
-            <Link
-              href="/town/groups/new"
-              className="text-blue-600 hover:underline"
-            >
-              새로운 모임을 만들어보세요
-            </Link>
+            {user && (
+              <Link
+                href="/town/groups/new"
+                className="text-blue-600 hover:underline"
+              >
+                새로운 모임을 만들어보세요
+              </Link>
+            )}
           </div>
         )}
 

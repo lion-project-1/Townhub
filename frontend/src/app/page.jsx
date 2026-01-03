@@ -13,19 +13,15 @@ import { useAuth } from "./contexts/AuthContext";
 import { useTown } from "./contexts/TownContext";
 
 export default function MainPage() {
-  const { user } = useAuth();
+  const { user } = useAuth(); // 유지 (버튼 텍스트에서 사용)
   const { selectedTown } = useTown();
   const router = useRouter();
 
   const handleGetStarted = () => {
-    if (user) {
-      if (selectedTown) {
-        router.push("/town");
-      } else {
-        router.push("/town-select");
-      }
+    if (selectedTown) {
+      router.push("/town");
     } else {
-      router.push("/signup");
+      router.push("/town-select");
     }
   };
 
@@ -136,7 +132,7 @@ export default function MainPage() {
             onClick={handleGetStarted}
             className="px-8 py-4 bg-white text-blue-600 rounded-lg hover:bg-blue-50 inline-flex items-center gap-2"
           >
-            {user ? "내 동네 가기" : "회원가입하기"}
+            {user ? "내 동네 가기" : "시작하기"}
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>
