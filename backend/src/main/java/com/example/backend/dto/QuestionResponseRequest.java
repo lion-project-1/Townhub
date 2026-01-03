@@ -22,6 +22,7 @@ public class QuestionResponseRequest {
     private String content;
     private String writer;
     private LocalDateTime createdAt;
+    private int views;
 
     public QuestionResponseRequest(Question question) {
         this.id = question.getId();
@@ -29,5 +30,6 @@ public class QuestionResponseRequest {
         this.content = question.getContent();
         this.writer = question.getUser().getNickname();
         this.createdAt = question.getCreatedAt();
+        this.views = question.getViewCount();
     }
 }
