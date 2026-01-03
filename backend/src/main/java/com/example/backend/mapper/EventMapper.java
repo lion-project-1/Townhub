@@ -7,8 +7,10 @@ import com.example.backend.domain.Event;
 import com.example.backend.domain.EventMember;
 import com.example.backend.domain.Location;
 import com.example.backend.domain.User;
+import com.example.backend.dto.EventCreateRequest;
 import com.example.backend.dto.EventDetailResponse;
 import com.example.backend.dto.EventMemberResponse;
+import com.example.backend.enums.EventStatus;
 
 public class EventMapper {
 
@@ -49,19 +51,19 @@ public class EventMapper {
 			.build();
 	}
 
-	// public static Event toEvent(EventCreateRequest request, Location location, User host) {
-	// 	return Event.builder()
-	// 		.title(request.getTitle())
-	// 		.description(request.getDescription())
-	// 		.category(request.getCategory())
-	// 		.eventPlace(request.getEventPlace())
-	// 		.startAt(request.getStartAt())
-	// 		.capacity(request.getCapacity())
-	// 		.status(EventStatus.RECRUITING)
-	// 		.host(host)
-	// 		.location(location)
-	// 		.build();
-	// }
+	public static Event toEvent(EventCreateRequest request, Location location, User host) {
+		return Event.builder()
+			.title(request.getTitle())
+			.description(request.getDescription())
+			.category(request.getCategory())
+			.eventPlace(request.getEventPlace())
+			.startAt(request.getStartAt())
+			.capacity(request.getCapacity())
+			.status(EventStatus.RECRUITING)
+			.host(host)
+			.location(location)
+			.build();
+	}
 
 	public static boolean calculateIsEnded(LocalDateTime startAt) {
 		if (startAt == null)

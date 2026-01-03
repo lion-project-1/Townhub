@@ -65,7 +65,11 @@ public enum ErrorCode {
 	INVALID_EVENT_CAPACITY(HttpStatus.BAD_REQUEST, "EVENT-001", "이벤트의 인원 범위는 2~100명 사이입니다."),
 	INVALID_EVENT_START_AT(HttpStatus.BAD_REQUEST, "EVENT-002", "이벤트 시작 시간은 현재 시각 이후여야 합니다."),
 	INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "EVENT-003", "시작 날짜는 종료 날짜보다 이후일 수 없습니다."),
-	EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "EVENT-004", "해당 이벤트가 존재하지 않습니다.");
+	EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "EVENT-004", "해당 이벤트가 존재하지 않습니다."),
+	EVENT_HOST_ONLY(HttpStatus.FORBIDDEN, "EVENT-005", "이벤트 주최자만 접근할 수 있습니다."),
+	INVALID_FLASH_START_AT(HttpStatus.BAD_REQUEST, "EVENT-006", "번개 이벤트는 당일만 생성 가능합니다."),
+
+	;
 
 	private final HttpStatus status;
 	private final String code;
