@@ -1,12 +1,13 @@
 package com.example.backend.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
-public class TokenResponse {
-
-    private String accessToken;
+@AllArgsConstructor
+public class LoginResult {
+    private LoginResponse response;
     private String refreshToken;
 }
