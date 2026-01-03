@@ -11,11 +11,14 @@ import com.example.backend.global.response.ApiResponse;
 import com.example.backend.service.QuestionService;
 import jakarta.validation.Valid;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -38,24 +41,37 @@ public class QuestionController {
 
     // 질문 생성
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> create(@RequestBody QuestionCreateRequest request) {
+    public ResponseEntity<ApiResponse<Long>> create(@RequestBody QuestionCreateRequest request
+                                                    //@AuthenticationPrincipal CustomUserDetails user
+    ) {
         Long tmpUserId = 1L;
 
-        questionService.createQuestion(tmpUserId, request);
+        Long questionId = questionService.createQuestion(tmpUserId, request);
 
-        return ResponseEntity.ok(ApiResponse.success("질문이 생성되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success(questionId));
     }
 
     // 질문 리스트
     @GetMapping
-    public List<QuestionResponseRequest> list() {
-        return questionService.getQuestions();
+    public ResponseEntity<ApiResponse<Page<QuestionResponseRequest>>> list(
+            @PageableDefault(
+                    page = 0,
+                    size = 10,
+                    sort = "id",
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(questionService.getQuestions(pageable))
+        );
     }
 
     // 질문 상세
     @GetMapping("/{id}")
-    public QuestionResponseRequest detail(@PathVariable Long id) {
-        return questionService.getQuestion(id);
+    public ResponseEntity<ApiResponse<QuestionResponseRequest>> detail(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                ApiResponse.success(questionService.getQuestion(id))
+        );
     }
 
 

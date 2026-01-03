@@ -26,20 +26,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Table(
-	name = "meeting_members",
+	name = "event_members",
 	uniqueConstraints = {
-		@UniqueConstraint(columnNames = {"meeting_id", "user_id"})
+		@UniqueConstraint(columnNames = {"event_id", "user_id"})
 	}
 )
-public class MeetingMember extends BaseEntity {
-
+public class EventMember {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "meeting_id", nullable = false)
-	private Meeting meeting;
+	@JoinColumn(name = "event_id", nullable = false)
+	private Event event;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
@@ -49,17 +48,17 @@ public class MeetingMember extends BaseEntity {
 	@Column(nullable = false)
 	private ParticipantRole role;
 
-	protected MeetingMember(Meeting meeting, User user, ParticipantRole role) {
-		this.meeting = meeting;
+	protected EventMember(Event event, User user, ParticipantRole role) {
+		this.event = event;
 		this.user = user;
 		this.role = role;
 	}
 
-	public static MeetingMember createHost(Meeting meeting, User user) {
-		return new MeetingMember(meeting, user, ParticipantRole.HOST);
+	public static EventMember createHost(Event event, User user) {
+		return new EventMember(event, user, ParticipantRole.HOST);
 	}
 
-	public static MeetingMember createMember(Meeting meeting, User user) {
-		return new MeetingMember(meeting, user, ParticipantRole.MEMBER);
+	public static EventMember createMember(Event event, User user) {
+		return new EventMember(event, user, ParticipantRole.MEMBER);
 	}
 }

@@ -1,5 +1,6 @@
 package com.example.backend.global.response;
 
+import com.example.backend.global.exception.custom.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -34,5 +35,8 @@ public class ApiResponse<T> {
 
     public static <T> ApiResponse<T> fail(String code, String message, T data) {
         return new ApiResponse<>(false, code, message, data);
+    }
+    public static <T> ApiResponse<T> fail(ErrorCode errorCode) {
+        return new ApiResponse<>(false, errorCode.name(), errorCode.getMessage(), null);
     }
 }

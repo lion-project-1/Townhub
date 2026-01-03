@@ -1,6 +1,6 @@
 package com.example.backend.domain;
 
-import com.example.backend.enums.ParticipantRole;
+import com.example.backend.enums.JoinRequestStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,40 +26,37 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Table(
-	name = "meeting_members",
+	name = "event_join_requests",
 	uniqueConstraints = {
-		@UniqueConstraint(columnNames = {"meeting_id", "user_id"})
+		@UniqueConstraint(columnNames = {"event_id", "user_id"})
 	}
 )
-public class MeetingMember extends BaseEntity {
+public class EventJoinRequest {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "meeting_id", nullable = false)
-	private Meeting meeting;
-
-	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
 	private User user;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "event_id", nullable = false)
+	private Event event;
+
+	@Column(length = 100)
+	private String message;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private ParticipantRole role;
+	private JoinRequestStatus status;
 
-	protected MeetingMember(Meeting meeting, User user, ParticipantRole role) {
-		this.meeting = meeting;
-		this.user = user;
-		this.role = role;
+	public void approve() {
+		this.status = JoinRequestStatus.APPROVED;
 	}
 
-	public static MeetingMember createHost(Meeting meeting, User user) {
-		return new MeetingMember(meeting, user, ParticipantRole.HOST);
-	}
-
-	public static MeetingMember createMember(Meeting meeting, User user) {
-		return new MeetingMember(meeting, user, ParticipantRole.MEMBER);
+	public void reject() {
+		this.status = JoinRequestStatus.REJECTED;
 	}
 }

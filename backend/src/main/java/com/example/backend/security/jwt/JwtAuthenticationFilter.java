@@ -10,10 +10,10 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,11 +31,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(
             HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String token = getToken(request);
+        String token = resolveAccessToken(request);
 
         if (StringUtils.hasText(token)) {
             try {
-                Authentication authentication = getAuthentication(token);
+                Authentication authentication = authenticate(token);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (ExpiredJwtException e) {
                 SecurityContextHolder.clearContext();
@@ -55,21 +55,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String getToken(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
+    private String resolveAccessToken(HttpServletRequest request) {
+        String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
         // 헤더로 AccessToken 들어올 때
         if (StringUtils.hasText(authorization) && authorization.startsWith("Bearer ")) {
             return authorization.substring(7);
-        }
-
-        // 쿠키로 AccessToken 들어왔을 때
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("accessToken".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
         }
 
         return null;
@@ -78,14 +68,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // 파싱
     private Claims parseClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(jwtProvider.getKey())
+                .setSigningKey(jwtProvider.getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
 
     // 검증
-    private Authentication getAuthentication(String token) {
+    private Authentication authenticate(String token) {
         // 만료 없는 토큰 (환경변수로 설정한 userId 값으로 인증)
         if (jwtProvider.isMasterToken(token)) {
             Long masterUserId = jwtProvider.getMasterUserIdOrThrow();

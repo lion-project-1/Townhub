@@ -15,6 +15,23 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { deleteQuestion } from "@/app/api/questions";
+import { getQuestion } from "@/app/api/questions"
+
+
+const CATEGORIES = [
+    { label: "맛집", value: "RESTAURANT" },
+    { label: "의료", value: "HOSPITAL" },
+    { label: "생활", value: "LIVING" },
+    { label: "교통", value: "TRAFFIC" },
+    { label: "교육", value: "EDUCATION" },
+    { label: "주거", value: "HOUSING" },
+    { label: "기타", value: "ETC" },
+];
+
+
+import { getAnswers, createAnswer, updateAnswer, deleteAnswer, acceptAnswer, unacceptAnswer } from "@/app/api/answers";
+
+// 날짜 포맷팅 함수: ISO 8601 형식을 YYYY-MM-DD HH:mm 형식으로 변환
 import {
   getAnswers,
   createAnswer,
@@ -58,21 +75,57 @@ export default function QnaDetailPage() {
 
   const isDevMode = process.env.NEXT_PUBLIC_DEV === "true";
 
-  const isMyQuestion =
-    params.id === "1" || params.id === "100" || params.id === "999";
 
-  const question = {
-    id: params.id,
-    title: "이 근처 맛있는 한식당 추천해주세요",
-    content:
-      "가족 모임을 위해 괜찮은 한식당을 찾고 있습니다. 10명 정도 수용 가능하고, 주차도 편한 곳이면 좋겠어요. 추천 부탁드립니다!",
-    author: isMyQuestion ? user?.name || "나" : "김민수",
-    authorId: isMyQuestion ? user?.id || "1" : "2",
-    category: "맛집",
-    views: 124,
-    isResolved: true,
-    createdAt: "2025-01-22 10:00",
-  };
+    const [question, setQuestion] = useState(null);
+
+
+    useEffect(() => {
+        async function fetchQuestion() {
+            try {
+                const data = await getQuestion(params.id);
+                setQuestion(data);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        fetchQuestion();
+    }, [params.id]);
+
+
+
+    if (!question) {
+        return <div>로딩중...</div>;
+    }
+
+
+    const categoryLabel =
+        CATEGORIES.find(c => c.value === question.category)?.label
+        ?? question.category;
+
+    const formattedDate = question.createdAt.replace("T", " ");
+
+    const answers = [
+    {
+      id: 1,
+      content:
+        '중앙시장 근처에 있는 "전통한식" 강추합니다! 룸도 있고 주차장도 넓어요. 음식도 정말 맛있고 가격도 합리적입니다.',
+      author: "이영희",
+      authorId: "3",
+      likes: 8,
+      isAccepted: true,
+      createdAt: "2025-01-22 10:30",
+    },
+    {
+      id: 2,
+      content:
+        '공원 앞 "우리집밥상"도 괜찮아요. 분위기도 좋고 음식도 깔끔합니다.',
+      author: "박철수",
+      authorId: "4",
+      likes: 3,
+      isAccepted: false,
+      createdAt: "2025-01-22 11:00",
+    },
+  ];
 
   const isAuthor = user?.id === question.authorId;
 
@@ -234,7 +287,7 @@ export default function QnaDetailPage() {
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3 flex-1">
               <h1 className="text-gray-900">{question.title}</h1>
-              {question.isResolved && (
+              {question.resolved  && (
                 <span className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded flex-shrink-0">
                   <CheckCircle className="w-4 h-4" />
                   해결됨
@@ -263,12 +316,12 @@ export default function QnaDetailPage() {
 
           <div className="flex items-center gap-4 mb-6 text-sm text-gray-500">
             <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded">
-              {question.category}
+              {categoryLabel}
             </span>
-            <span>{question.author}</span>
+            <span>{question.writer}</span>
             <span className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
-              {question.createdAt}
+              {formattedDate}
             </span>
             <span className="flex items-center gap-1">
               <TrendingUp className="w-4 h-4" />

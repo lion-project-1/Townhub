@@ -3,8 +3,21 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save } from 'lucide-react';
+import { createQuestion } from "/src/app/api/questions";
 
-const CATEGORIES = ['맛집', '교통', '생활', '의료', '교육', '기타'];
+
+
+const CATEGORIES = [
+    {label: "맛집", value: "RESTAURANT"},
+    {label: "의료", value: "HOSPITAL"},
+    {label: "생활", value: "LIVING"},
+    {label: "교통", value: "TRAFFIC"},
+    {label: "교육", value: "EDUCATION"},
+    {label: "주거", value: "HOUSING"},
+    {label: "기타", value: "ETC"},
+];
+
+
 
 export default function QnaNewPage() {
   const router = useRouter();
@@ -21,9 +34,18 @@ export default function QnaNewPage() {
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    router.push('/town/qna/1');
+  const handleSubmit = async (e) => {
+      e.preventDefault();
+
+      try {
+          // const token = 0; // 실제 로그인 토큰 사용
+          const result = await createQuestion(formData);
+          console.log(result); // 등록된 질문 확인
+          router.push(`/town/qna/${result.data}`); // 상세페이지 이동
+      } catch (error) {
+          console.error(error);
+          alert("질문 등록 중 오류가 발생했습니다.");
+      }
   };
 
   return (
@@ -57,8 +79,8 @@ export default function QnaNewPage() {
               >
                 <option value="">선택하세요</option>
                 {CATEGORIES.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
+                  <option key={category.value} value={category.value}>
+                    {category.label}
                   </option>
                 ))}
               </select>
