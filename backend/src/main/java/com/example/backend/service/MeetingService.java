@@ -153,7 +153,6 @@ public class MeetingService {
     }
 
     @Transactional
-    @MeasureTime
     public void approveJoinRequest(Long meetingId, Long requestId, Long hostUserId) {
         Meeting meeting = getMeeting(meetingId);
         User host = getUser(hostUserId);
@@ -222,7 +221,7 @@ public class MeetingService {
                 .orElseThrow(() ->
                         new CustomException(ErrorCode.MEETING_MEMBER_NOT_FOUND));
 
-        if (member.getRole() == MeetingMemberRole.HOST) {
+        if (member.getRole() == ParticipantRole.HOST) {
             throw new CustomException(ErrorCode.MEETING_HOST_CANNOT_BE_REMOVED);
         }
 

@@ -1,6 +1,6 @@
 package com.example.backend.dto;
 
-import com.example.backend.enums.MeetingMemberRole;
+import com.example.backend.enums.ParticipantRole;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,6 +13,6 @@ public class MeetingMemberTimelineResponse {
 
     private Long userId;
     private String nickname;
-    private MeetingMemberRole role;
+    private ParticipantRole role;
     private LocalDateTime joinedAt;
 }
