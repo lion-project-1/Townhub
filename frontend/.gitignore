@@ -39,3 +39,5 @@ next-env.d.ts
 
 # local
 Dockerfile.local
+
+node_modules/
