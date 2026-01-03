@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.backend.dto.EventCalendarResponse;
 import com.example.backend.dto.EventCalendarSearchCondition;
+import com.example.backend.dto.EventDetailResponse;
 import com.example.backend.dto.EventListResponse;
 import com.example.backend.dto.EventSearchCondition;
 import com.example.backend.dto.FlashEventListResponse;
@@ -57,4 +58,13 @@ public class EventController {
 		List<EventCalendarResponse> events = eventService.getCalendarEvents(condition);
 		return ResponseEntity.ok(ApiResponse.success(events));
 	}
+
+	@GetMapping("/{eventId}")
+	public ResponseEntity<ApiResponse<EventDetailResponse>> getEventDetail(
+		@PathVariable Long eventId
+	) {
+		EventDetailResponse response = eventService.getEventDetail(eventId);
+		return ResponseEntity.ok(ApiResponse.success(response));
+	}
+
 }

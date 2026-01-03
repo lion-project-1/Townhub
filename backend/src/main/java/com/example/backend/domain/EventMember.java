@@ -31,7 +31,7 @@ import lombok.NoArgsConstructor;
 		@UniqueConstraint(columnNames = {"event_id", "user_id"})
 	}
 )
-public class EventMember {
+public class EventMember extends BaseEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
