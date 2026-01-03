@@ -28,7 +28,6 @@ public class QuestionResponseRequest {
 
 
     private LocalDateTime createdAt;
-    private int views;
 
 
 
@@ -44,6 +43,6 @@ public class QuestionResponseRequest {
         this.resolved = false;
 
         this.createdAt = question.getCreatedAt();
-        this.views = question.getViewCount();
+
     }
 }
