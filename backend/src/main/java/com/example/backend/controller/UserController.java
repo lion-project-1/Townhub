@@ -84,4 +84,12 @@ public class UserController {
                 .body(ApiResponse.success("로그아웃 완료", null));
     }
 
+    @GetMapping("/mypage")
+    public ResponseEntity<ApiResponse<UserMyPageResponseDto>> getMyPage(
+            @AuthenticationPrincipal User user) {
+
+        UserMyPageResponseDto myInfo = userService.getMyPage(user.getId());
+        return ResponseEntity.ok(ApiResponse.success(myInfo));
+    }
+
 }

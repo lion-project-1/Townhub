@@ -6,12 +6,16 @@ import com.example.backend.domain.User;
 import com.example.backend.dto.*;
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
+import com.example.backend.repository.AnswerRepository;
 import com.example.backend.repository.LocationRepository;
+import com.example.backend.repository.MeetingRepository;
+import com.example.backend.repository.QuestionRepository;
 import com.example.backend.repository.RefreshTokenRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.security.jwt.JwtProvider;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,6 +31,10 @@ public class UserService {
     private final JwtProvider jwtProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final LocationRepository locationRepository;
+    private final MeetingRepository meetingRepository;
+    // private final EventRepository eventRepository;
+    private final QuestionRepository questionRepository;
+    private final AnswerRepository answerRepository;
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
@@ -130,5 +138,27 @@ public class UserService {
         if (!StringUtils.hasText(refreshToken)) return; // 쿠키 있는지 확인
 
         refreshTokenRepository.deleteByToken(refreshToken);
+    }
+
+    @Transactional(readOnly = true)
+    public UserMyPageResponseDto getMyPage(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        String location = null;
+        if (user.getLocation() != null) {
+            location = user.getLocation().getProvince() + " " + user.getLocation().getCity();
+        }
+
+        return UserMyPageResponseDto.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .location(location)
+                .createdAt(user.getCreatedAt())
+                .groups(meetingRepository.countByHostId(userId))
+                .events(-1)//eventRepository.countByUserId(userId))
+                .qna(questionRepository.countByUserId(userId))
+                .build();
     }
 }

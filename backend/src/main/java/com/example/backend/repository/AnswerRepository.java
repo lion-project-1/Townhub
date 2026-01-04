@@ -25,4 +25,6 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
 	void deleteByQuestionId(@Param("questionId") Long questionId);
 
 	Optional<Answer> findByQuestionIdAndIsAcceptedTrue(Long questionId);
+
+	int countByUserId(Long userId);
 }

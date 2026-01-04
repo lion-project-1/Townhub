@@ -5,10 +5,12 @@ import com.example.backend.domain.QMeeting;
 import com.example.backend.domain.QMeetingMember;
 import com.example.backend.dto.MeetingListResponse;
 import com.example.backend.dto.MeetingSearchCondition;
+import com.example.backend.dto.MyMeetingItemDto;
 import com.example.backend.enums.MeetingCategory;
 import com.example.backend.enums.MeetingStatus;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -111,4 +113,44 @@ public class MeetingQueryRepositoryImpl implements MeetingQueryRepository {
     //             ? null
     //             : QLocation.location.town.eq(town);
     // }
+
+
+    public List<MyMeetingItemDto> findMyMeetings(
+            Long userId,
+            Long cursor,
+            int size) {
+        QMeeting m = QMeeting.meeting;
+        QMeetingMember mm = QMeetingMember.meetingMember;
+        QMeetingMember mm2 = new QMeetingMember("mm2");
+
+        return queryFactory
+                .select(Projections.constructor(
+                        MyMeetingItemDto.class,
+                        m.id,
+                        m.title,
+                        m.status,
+                        JPAExpressions
+                                .select(mm2.count())
+                                .from(mm2)
+                                .where(mm2.meeting.eq(m)),
+                        m.capacity,
+                        mm.createdAt
+                ))
+                .from(mm)
+                .join(mm.meeting, m)
+                .where(
+                        mm.user.id.eq(userId),
+                        cursorCondition(cursor, m)
+                )
+                .orderBy(m.id.desc())
+                .limit(size + 1)
+                .fetch();
+    }
+
+    private BooleanExpression cursorCondition(Long cursor, QMeeting m) {
+        if (cursor == null) {
+            return null;
+        }
+        return m.id.lt(cursor);
+    }
 }
