@@ -1,4 +1,6 @@
 const BASE_URL = "http://localhost:8080/api/questions";
+const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
+
 
 export async function updateQuestion(id, data, token) {
   const res = await fetch(`${BASE_URL}/${id}`, {
@@ -32,7 +34,12 @@ export async function deleteQuestion(id, token) {
 
 
 export async function createQuestion(data) {
-    const headers = { "Content-Type": "application/json" };
+
+    const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // ⭐ 토큰 추가
+    };
+
     const res = await fetch(BASE_URL, {
         method: "POST",
         headers: headers,
@@ -53,27 +60,97 @@ export async function createQuestion(data) {
     return res.json(); // 백엔드가 반환하는 등록된 질문 정보
 }
 
-export async function getQuestion(id) {
+// 질문 상세 페이지
+
+// 1️⃣ 질문 데이터만 가져오기 (조회수 증가 없음)
+export async function getQuestionData(id) {
+    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
+
+    const headers = {
+        "Content-Type": "application/json",
+    };
+
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
     const res = await fetch(`${BASE_URL}/${id}`, {
         method: "GET",
+        headers,
     });
 
     if (!res.ok) {
         throw new Error("질문 조회 실패");
     }
 
-    return res.json();
+    const json = await res.json();
+    return json.data; // 기존 코드처럼 data만 반환
 }
 
-// 모든 질문 조회
-export async function getQuestions() {
-    const res = await fetch(BASE_URL, {
-        method: "GET"
+// 2️⃣ 조회수 1 증가 전용
+export async function incrementQuestionViews(id) {
+    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
+
+    const headers = {
+        "Content-Type": "application/json",
+    };
+
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${BASE_URL}/${id}/views`, {
+        method: "POST",
+        headers,
     });
 
     if (!res.ok) {
-        throw new Error("질문 리스트 조회 실패");
+        throw new Error("조회수 증가 실패");
     }
 
-    return res.json(); // 질문 배열 반환
+    const json = await res.json();
+    return json.data;
+}
+
+
+
+// 모든 질문 조회
+export async function getQuestions({
+                                       page = 0,
+                                       size = 10,
+                                       search = '',
+                                       category = null,
+                                       sort = 'createdAt,desc', // 기본 정렬
+                                   } = {}) {
+    const params = new URLSearchParams();
+    params.append('page', page);
+    params.append('size', size);
+    if (search) params.append('search', search);
+    if (category) params.append('category', category);
+    if (sort) params.append('sort', sort);
+
+    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
+    if (!token) throw new Error("env 토큰이 없습니다");
+
+    const res = await fetch(`${BASE_URL}?${params.toString()}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    console.log("TOKEN:", token);
+    console.log("FETCH URL:", `${BASE_URL}?${params.toString()}`);
+
+    if (!res.ok) throw new Error('질문 조회 실패');
+
+    const json = await res.json();
+
+    // 프론트에서 바로 사용하기 좋게 content + page 정보만 반환
+    return {
+        content: json.data.content,
+        number: json.data.page.number,
+        totalPages: json.data.page.totalPages,
+    };
 }

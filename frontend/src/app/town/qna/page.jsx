@@ -16,54 +16,56 @@ const CATEGORIES = [
 ];
 
 
-const SORT_OPTIONS = ['최신순', '인기순', '미해결'];
+const SORT_OPTIONS = [
+    {label: '최신순', value: 'createdAt,desc'},
+    {label: '인기순', value: 'viewCount,desc'},
+];
 
 export default function QnaListPage() {
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('ALL');
-    const [sortBy, setSortBy] = useState('최신순');
+    const [sortOption, setSortOption] = useState(SORT_OPTIONS[0].value);
 
-    const [questions, setQuestions] = useState([]); // API 데이터 상태
+
+    const [page, setPage] = useState(0);
+    const [pageData, setPageData] = useState({
+        content: [],
+        totalPages: 0,
+        number: 0,
+    });
+
     const [loading, setLoading] = useState(true);
 
-    // 페이지 로딩 시 질문 리스트 가져오기
+
     useEffect(() => {
-        async function fetchQuestions() {
+        const handler = setTimeout(() => setDebouncedQuery(searchQuery), 300); // 300ms
+        return () => clearTimeout(handler);
+    }, [searchQuery]);
+
+    // useEffect에서 API 호출 시 debouncedQuery 사용
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
             try {
-                const data = await getQuestions();
-                setQuestions(data);
+                const data = await getQuestions({
+                    page,
+                    size: 10,
+                    search: debouncedQuery || null,
+                    category: selectedCategory === 'ALL' ? null : selectedCategory,
+                    sort: sortOption,
+                });
+                setPageData(data);
             } catch (err) {
                 console.error(err);
+                setPageData({content: [], totalPages: 0, number: 0});
             } finally {
                 setLoading(false);
             }
-        }
+        };
+        fetchData();
+    }, [debouncedQuery, page, selectedCategory, sortOption]);
 
-        fetchQuestions();
-    }, []);
-
-
-    let filteredQuestions = questions.filter((question) => {
-        const matchesSearch =
-            question.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            question.content.toLowerCase().includes(searchQuery.toLowerCase());
-
-        const matchesCategory =
-            selectedCategory === 'ALL' ||
-            question.category === selectedCategory;
-
-        return matchesSearch && matchesCategory;
-    });
-
-    if (sortBy === '인기순') {
-        filteredQuestions = [...filteredQuestions].sort((a, b) => b.views - a.views);
-    } else if (sortBy === '미해결') {
-        filteredQuestions = filteredQuestions.filter((q) => !q.isResolved);
-    }
-
-    if (loading) {
-        return <div className="text-center py-20">로딩 중...</div>;
-    }
 
     const getCategoryLabel = (value) =>
         CATEGORIES.find(c => c.value === value)?.label ?? value;
@@ -75,6 +77,12 @@ export default function QnaListPage() {
             .replace("T", " ")
             .slice(0, 16); // 2025-12-27 22:47
     }
+
+
+    if (loading) {
+        return <div className="text-center py-20">로딩 중...</div>;
+    }
+
 
 
     return (
@@ -109,32 +117,37 @@ export default function QnaListPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-4">
-                        {/*카테고리 버튼*/}
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                onClick={() => setSelectedCategory('ALL')}
-                                className={`px-3 py-1.5 rounded-full text-sm ${
-                                    selectedCategory === 'ALL'
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
-                            >
-                                전체
-                            </button>
-
-                            {CATEGORIES.map((category) => (
+                        <div>
+                            <label className="block text-sm text-gray-700 mb-2">
+                                카테고리
+                            </label>
+                            {/*카테고리 버튼*/}
+                            <div className="flex flex-wrap gap-2">
                                 <button
-                                    key={category.value}
-                                    onClick={() => setSelectedCategory(category.value)}
+                                    onClick={() => setSelectedCategory('ALL')}
                                     className={`px-3 py-1.5 rounded-full text-sm ${
-                                        selectedCategory === category.value
+                                        selectedCategory === 'ALL'
                                             ? 'bg-blue-600 text-white'
                                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                                 >
-                                    {category.label}
+                                    전체
                                 </button>
-                            ))}
+
+                                {CATEGORIES.map((category) => (
+                                    <button
+                                        key={category.value}
+                                        onClick={() => setSelectedCategory(category.value)}
+                                        className={`px-3 py-1.5 rounded-full text-sm ${
+                                            selectedCategory === category.value
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {category.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {/*정렬 버튼*/}
@@ -143,15 +156,18 @@ export default function QnaListPage() {
                             <div className="flex flex-wrap gap-2">
                                 {SORT_OPTIONS.map((option) => (
                                     <button
-                                        key={option}
-                                        onClick={() => setSortBy(option)}
+                                        key={option.value}
+                                        onClick={() => {
+                                            setSortOption(option.value);
+                                            setPage(0); // 페이지 초기화
+                                        }}
                                         className={`px-3 py-1.5 rounded-full text-sm ${
-                                            sortBy === option
+                                            sortOption === option.value  // ✅ 문자열로 비교
                                                 ? 'bg-blue-600 text-white'
                                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                         }`}
-                                    >
-                                        {option}
+                                        >
+                                        {option.label}
                                     </button>
                                 ))}
                             </div>
@@ -161,7 +177,15 @@ export default function QnaListPage() {
 
                 {/* Questions List */}
                 <div className="space-y-4">
-                    {filteredQuestions.map((question) => (
+                    {pageData.content.length === 0 ? (
+                        <div className="text-center py-20">
+                            <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4"/>
+                            <p className="text-gray-600 mb-4">검색 결과가 없습니다.</p>
+                            <Link href="/town/qna/new" className="text-blue-600 hover:underline">
+                                첫 질문을 남겨보세요
+                            </Link>
+                        </div>
+                    ) : (pageData.content.map((question) =>(
                         <Link
                             key={question.id}
                             href={`/town/qna/${question.id}`}
@@ -188,28 +212,29 @@ export default function QnaListPage() {
                                         </div>
                                         <span
                                             className="px-3 py-1 bg-purple-100 text-purple-700 rounded text-sm flex-shrink-0 ml-2">
-                      {getCategoryLabel(question.category)}
-                    </span>
+                                            {getCategoryLabel(question.category)}
+                                        </span>
                                     </div>
                                     <p className="text-gray-600 mb-4 line-clamp-2">{question.content}</p>
                                     <div className="flex items-center gap-4 text-sm text-gray-500">
                                         <span>{question.author}</span>
                                         <span className="flex items-center gap-1">
-                      <Clock className="w-4 h-4"/>
+                                            <Clock className="w-4 h-4"/>
                                             {formatDate(question.createdAt)}
-                    </span>
+                                        </span>
                                         <span className="flex items-center gap-1">
-                      <TrendingUp className="w-4 h-4"/>
-                      조회 {question.views}
-                    </span>
+                                            <TrendingUp className="w-4 h-4"/>
+                                            조회 {question.views}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
                         </Link>
-                    ))}
+                        ))
+                    )}
                 </div>
 
-                {filteredQuestions.length === 0 && (
+                {/*{filteredQuestions.length === 0 && (
                     <div className="text-center py-20">
                         <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4"/>
                         <p className="text-gray-600 mb-4">검색 결과가 없습니다.</p>
@@ -217,7 +242,36 @@ export default function QnaListPage() {
                             첫 질문을 남겨보세요
                         </Link>
                     </div>
+                )}*/}
+
+
+                {/* Pagination */}
+                {pageData?.totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-2 mt-8">
+                        <button
+                            disabled={pageData.number === 0}
+                            onClick={() => setPage(page - 1)}
+                            className="px-3 py-1 border rounded disabled:opacity-40"
+                        >
+                            이전
+                        </button>
+
+                        <span className="text-sm text-gray-600">
+                            {pageData.number + 1} / {pageData.totalPages}
+                        </span>
+
+                        <button
+                            disabled={pageData.number + 1 === pageData.totalPages}
+                            onClick={() => setPage(page + 1)}
+                            className="px-3 py-1 border rounded disabled:opacity-40"
+                        >
+                            다음
+                        </button>
+                    </div>
                 )}
+
+
+
             </div>
         </div>
     );

@@ -49,6 +49,9 @@ public class Question extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(nullable = false)
+    private int viewCount=0;
+
     public void update(QuestionCategory category, String title, String content) {
         if (category != null) {
             this.questionCategory = category;

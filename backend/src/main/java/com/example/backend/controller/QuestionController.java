@@ -11,11 +11,12 @@ import com.example.backend.global.response.ApiResponse;
 import com.example.backend.service.QuestionService;
 import jakarta.validation.Valid;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -49,17 +50,44 @@ public class QuestionController {
     }
 
     // 질문 리스트
+ /*   @GetMapping
+    public  ResponseEntity<ApiResponse<Page<QuestionResponseRequest>>> list(@PageableDefault(
+            page = 0,
+            size = 10
+    ) Pageable pageable) {
+        return ResponseEntity.ok(
+                ApiResponse.success(questionService.getQuestions(pageable)));
+    }*/
+
     @GetMapping
-    public List<QuestionResponseRequest> list() {
-        return questionService.getQuestions();
+    public ResponseEntity<ApiResponse<Page<QuestionResponseRequest>>> list(
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "category", required = false) String category,
+            @PageableDefault(page = 0, size = 10) Pageable pageable
+    ) {
+        Page<QuestionResponseRequest> questions = questionService.getQuestions(pageable, search, category);
+        return ResponseEntity.ok(ApiResponse.success(questions));
     }
+
+
+
 
     // 질문 상세
     @GetMapping("/{id}")
-    public QuestionResponseRequest detail(@PathVariable Long id) {
-        return questionService.getQuestion(id);
+    public ResponseEntity<ApiResponse<QuestionResponseRequest>> getQuestionData(
+            @PathVariable Long id
+    ) {
+        QuestionResponseRequest question = questionService.getQuestionData(id);
+        return ResponseEntity.ok(ApiResponse.success(question));
     }
 
+    @PostMapping("/{id}/views")
+    public ResponseEntity<ApiResponse<QuestionResponseRequest>> incrementQuestionViews(
+            @PathVariable Long id
+    ) {
+        QuestionResponseRequest question = questionService.incrementQuestionViews(id);
+        return ResponseEntity.ok(ApiResponse.success(question));
+    }
 
 
     @PatchMapping("/{questionId}")
