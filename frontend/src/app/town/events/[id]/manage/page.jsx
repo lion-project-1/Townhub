@@ -10,6 +10,8 @@ import {
   getJoinRequests,
   approveJoinRequest,
   rejectJoinRequest,
+  getEventManageMembers,
+  removeEventManageMember,
 } from "@/app/api/events";
 
 /* ======================
@@ -58,9 +60,6 @@ export default function EventManagePage() {
         }
 
         setEvent(eventData);
-
-        // 멤버 목록 설정 (UI용)
-        setMembers(eventData.members || []);
       } catch (e) {
         console.error("이벤트 조회 실패:", e);
         handleError(e?.response?.data?.code, e?.response?.data?.message);
@@ -96,6 +95,37 @@ export default function EventManagePage() {
 
     loadRequests();
   }, [activeTab, eventId, token, event]);
+
+  /* ======================
+     멤버 목록 조회 (페이지 로드 시 한 번만)
+     ====================== */
+  useEffect(() => {
+    if (!event) return;
+
+    const loadMembers = async () => {
+      try {
+        const result = await getEventManageMembers(eventId, token);
+        if (result.success && result.data) {
+          setMembers(result.data || []);
+        } else {
+          // API 응답이 success가 아니거나 data가 없는 경우
+          setMembers([]);
+        }
+      } catch (e) {
+        console.error("멤버 목록 조회 실패:", e);
+        // 401/403 에러 처리
+        if (e?.response?.status === 401 || e?.response?.status === 403) {
+          alert("로그인이 필요하거나 권한이 없습니다.");
+          router.push("/login");
+          return;
+        }
+        handleError(e?.response?.data?.code, e?.response?.data?.message);
+        setMembers([]);
+      }
+    };
+
+    loadMembers();
+  }, [eventId, token, event, router]);
 
   /* ======================
      승인 / 거절
@@ -144,7 +174,7 @@ export default function EventManagePage() {
   };
 
   /* ======================
-     참여자 관리 (UI만, API 없음)
+     참여자 관리
      ====================== */
   const handleMemberLeave = (userId) => {
     // MEMBER 본인 탈퇴 (UI만, API 호출 없음)
@@ -154,11 +184,34 @@ export default function EventManagePage() {
     }
   };
 
-  const handleMemberRemove = (userId) => {
-    // HOST가 MEMBER 강퇴 (UI만, API 호출 없음)
-    if (confirm("정말로 이 참여자를 내보내시겠습니까?")) {
-      alert("강퇴 기능은 추후 구현 예정입니다.");
-      // TODO: API 연동 시 구현
+  const handleMemberRemove = async (eventMemberId) => {
+    // HOST가 MEMBER 강퇴
+    if (!confirm("정말 이 참여자를 삭제하시겠습니까?")) {
+      return;
+    }
+
+    try {
+      const result = await removeEventManageMember(eventId, eventMemberId, token);
+      
+      if (result.success) {
+        alert("멤버를 삭제했습니다.");
+        // 목록에서 제거 (eventMemberId 또는 userId로 비교)
+        setMembers((prev) => prev.filter((m) => (m.eventMemberId || m.userId) !== eventMemberId));
+      } else {
+        alert(result.message || "멤버 삭제에 실패했습니다.");
+      }
+    } catch (e) {
+      console.error("멤버 삭제 실패:", e);
+      
+      // 401/403 에러 처리
+      if (e?.response?.status === 401 || e?.response?.status === 403) {
+        alert("로그인이 필요하거나 권한이 없습니다.");
+        router.push("/login");
+        return;
+      }
+      
+      const errorMessage = e?.response?.data?.message || "멤버 삭제에 실패했습니다.";
+      alert(errorMessage);
     }
   };
 
@@ -166,7 +219,11 @@ export default function EventManagePage() {
     try {
       const result = await getEventDetail(eventId, token);
       setEvent(result.data);
-      setMembers(result.data.members || []);
+      // 멤버 목록도 API로 다시 조회
+      const membersResult = await getEventManageMembers(eventId, token);
+      if (membersResult.success && membersResult.data) {
+        setMembers(membersResult.data || []);
+      }
     } catch (e) {
       console.error("이벤트 재조회 실패:", e);
     }
@@ -312,7 +369,6 @@ export default function EventManagePage() {
                   members.map((m) => {
                     const isHost = m.role === "HOST";
                     const isCurrentUser = m.userId === user?.id;
-                    const isCurrentUserHost = isHost && isCurrentUser;
 
                     return (
                       <div
@@ -341,8 +397,6 @@ export default function EventManagePage() {
                             </div>
                             <span className="text-sm text-gray-500">
                               역할: {isHost ? "HOST" : "MEMBER"}
-                              {/* TODO: API 연동 시 참여 시각 표시 */}
-                              {/* 참여 시각: {formatDate(m.joinedAt)} */}
                             </span>
                           </div>
                         </div>
@@ -361,7 +415,7 @@ export default function EventManagePage() {
                           {/* HOST가 MEMBER 강퇴 버튼 */}
                           {!isHost && !isCurrentUser && (
                             <button
-                              onClick={() => handleMemberRemove(m.userId)}
+                              onClick={() => handleMemberRemove(m.eventMemberId || m.userId)}
                               className="px-3 py-1.5 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 flex items-center gap-1"
                             >
                               <UserMinus className="w-4 h-4" /> 강퇴
