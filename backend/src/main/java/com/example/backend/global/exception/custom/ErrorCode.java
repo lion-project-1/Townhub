@@ -68,6 +68,12 @@ public enum ErrorCode {
 	EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "EVENT-004", "해당 이벤트가 존재하지 않습니다."),
 	EVENT_HOST_ONLY(HttpStatus.FORBIDDEN, "EVENT-005", "이벤트 주최자만 접근할 수 있습니다."),
 	INVALID_FLASH_START_AT(HttpStatus.BAD_REQUEST, "EVENT-006", "번개 이벤트는 당일만 생성 가능합니다."),
+	EVENT_IS_FULL(HttpStatus.BAD_REQUEST, "EVENT-007", "이미 이벤트의 정원이 초과되었습니다."),
+	EVENT_NOT_OPEN(HttpStatus.BAD_REQUEST, "EVENT_008", "모집이 종료되었거나 취소된 이벤트는 신청할 수 없습니다."),
+	ALREADY_EVENT_REQUESTED(HttpStatus.CONFLICT, "EVENT_009", "이미 참여 신청한 이벤트입니다."),
+	EVENT_JOIN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "EVENT_010", "참여 신청 내역을 찾을 수 없습니다."),
+	EVENT_JOIN_REQUEST_FORBIDDEN(HttpStatus.FORBIDDEN, "EVENT_011", "본인의 참여 신청만 취소할 수 있습니다."),
+	EVENT_JOIN_REQUEST_NOT_PENDING(HttpStatus.BAD_REQUEST, "EVENT_012", "대기 상태의 참여 신청만 취소할 수 있습니다."),
 
 	;
 

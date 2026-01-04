@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.backend.domain.Event;
+import com.example.backend.domain.EventJoinRequest;
 import com.example.backend.domain.EventMember;
 import com.example.backend.domain.Location;
 import com.example.backend.domain.User;
@@ -20,16 +21,20 @@ import com.example.backend.dto.EventCalendarResponse;
 import com.example.backend.dto.EventCalendarSearchCondition;
 import com.example.backend.dto.EventCreateRequest;
 import com.example.backend.dto.EventDetailResponse;
+import com.example.backend.dto.EventJoinRequestDto;
 import com.example.backend.dto.EventListResponse;
 import com.example.backend.dto.EventMemberResponse;
 import com.example.backend.dto.EventSearchCondition;
 import com.example.backend.dto.EventUpdateRequest;
 import com.example.backend.dto.FlashEventListResponse;
 import com.example.backend.enums.EventCategory;
+import com.example.backend.enums.EventStatus;
+import com.example.backend.enums.JoinRequestStatus;
 import com.example.backend.enums.ParticipantRole;
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
 import com.example.backend.mapper.EventMapper;
+import com.example.backend.repository.EventJoinRequestRepository;
 import com.example.backend.repository.EventMemberRepository;
 import com.example.backend.repository.EventRepository;
 import com.example.backend.repository.LocationRepository;
@@ -46,6 +51,7 @@ public class EventService {
 	private final EventMemberRepository eventMemberRepository;
 	private final UserRepository userRepository;
 	private final LocationRepository locationRepository;
+	private final EventJoinRequestRepository eventJoinRequestRepository;
 
 	public Page<EventListResponse> getEventList(EventSearchCondition condition, Pageable pageable) {
 		return eventRepository.findEventList(condition, pageable);
@@ -63,7 +69,6 @@ public class EventService {
 	}
 
 	public EventDetailResponse getEventDetail(Long eventId) {
-
 		Event event = getEvent(eventId);
 
 		// 참여자(MEMBER)만 응답
@@ -81,19 +86,8 @@ public class EventService {
 		return toEventDetailResponse(event, members, memberCount, isEnded);
 	}
 
-	private Event getEvent(Long eventId) {
-		return eventRepository.findById(eventId)
-			.orElseThrow(() -> new CustomException(ErrorCode.EVENT_NOT_FOUND));
-	}
-
-	private User getUser(Long userId) {
-		return userRepository.findById(userId)
-			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-	}
-
 	@Transactional
 	public Long createEvent(Long userId, EventCreateRequest request) {
-
 		User host = getUser(userId);
 
 		validateFlashStartAt(request.getCategory(), request.getStartAt());
@@ -138,13 +132,69 @@ public class EventService {
 	}
 
 	@Transactional
-	public void cancelEvent(
-		Long eventId,
-		Long userId
-	) {
+	public void cancelEvent(Long eventId, Long userId) {
 		Event event = getEvent(eventId);
 		validateHost(eventId, userId);
 		event.cancel();
+	}
+
+	@Transactional
+	public void requestJoin(Long userId, Long eventId, EventJoinRequestDto dto) {
+		User user = getUser(userId);
+		Event event = getEvent(eventId);
+
+		// 종료 및 취소 이벤트 신청 불가
+		if (event.getStatus().equals(EventStatus.CANCELED) || event.getStatus().equals(EventStatus.CLOSED)) {
+			throw new CustomException(ErrorCode.EVENT_NOT_OPEN);
+		}
+
+		// 정원 초과 신청 불가
+		if (eventMemberRepository.countByEvent(event) >= event.getCapacity()) {
+			throw new CustomException(ErrorCode.EVENT_IS_FULL);
+		}
+
+		// 중복 신청 불가
+		if (eventJoinRequestRepository.existsByEventAndUser(event, user)) {
+			throw new CustomException(ErrorCode.ALREADY_EVENT_REQUESTED);
+		}
+
+		EventJoinRequest joinRequest = EventJoinRequest.builder()
+			.user(user)
+			.event(event)
+			.status(JoinRequestStatus.PENDING)
+			.message(dto.getMessage())
+			.build();
+
+		eventJoinRequestRepository.save(joinRequest);
+	}
+
+	@Transactional
+	public void cancelJoinRequest(Long userId, Long requestId) {
+		// 신청 내역 없으면 취소 불가
+		EventJoinRequest request = eventJoinRequestRepository.findById(requestId)
+			.orElseThrow(() -> new CustomException(ErrorCode.EVENT_JOIN_REQUEST_NOT_FOUND));
+
+		// 본인 아니면 취소 불가
+		if (!request.getUser().getId().equals(userId)) {
+			throw new CustomException(ErrorCode.EVENT_JOIN_REQUEST_FORBIDDEN);
+		}
+
+		// 대기 상태 아니면 취소 불가
+		if (!request.getStatus().equals(JoinRequestStatus.PENDING)) {
+			throw new CustomException(ErrorCode.EVENT_JOIN_REQUEST_NOT_PENDING);
+		}
+
+		eventJoinRequestRepository.delete(request);
+	}
+
+	private Event getEvent(Long eventId) {
+		return eventRepository.findById(eventId)
+			.orElseThrow(() -> new CustomException(ErrorCode.EVENT_NOT_FOUND));
+	}
+
+	private User getUser(Long userId) {
+		return userRepository.findById(userId)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 	}
 
 	private void validateHost(Long eventId, Long userId) {

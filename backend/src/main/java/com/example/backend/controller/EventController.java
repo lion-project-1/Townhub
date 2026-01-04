@@ -22,12 +22,15 @@ import com.example.backend.dto.EventCalendarSearchCondition;
 import com.example.backend.dto.EventCreateRequest;
 import com.example.backend.dto.EventCreateResponse;
 import com.example.backend.dto.EventDetailResponse;
+import com.example.backend.dto.EventJoinRequestDto;
+import com.example.backend.dto.EventJoinRequestResponse;
 import com.example.backend.dto.EventListResponse;
 import com.example.backend.dto.EventSearchCondition;
 import com.example.backend.dto.EventUpdateRequest;
 import com.example.backend.dto.FlashEventListResponse;
 import com.example.backend.enums.EventStatus;
 import com.example.backend.global.response.ApiResponse;
+import com.example.backend.service.EventManageService;
 import com.example.backend.service.EventService;
 
 import jakarta.validation.Valid;
@@ -39,6 +42,7 @@ import lombok.RequiredArgsConstructor;
 public class EventController {
 
 	private final EventService eventService;
+	private final EventManageService eventManageService;
 
 	@GetMapping
 	public ResponseEntity<ApiResponse<Page<EventListResponse>>> getEventList(
@@ -88,7 +92,6 @@ public class EventController {
 		EventCreateResponse response =
 			new EventCreateResponse(eventId, EventStatus.RECRUITING);
 
-		// 추후에 메시지를 상수/enum 변경 고려
 		return ResponseEntity.ok(ApiResponse.success("이벤트가 생성되었습니다.", response));
 	}
 
@@ -103,8 +106,7 @@ public class EventController {
 			user.getId(),
 			request
 		);
-
-		return ResponseEntity.ok(ApiResponse.success("모임이 변경되었습니다.", null));
+		return ResponseEntity.ok(ApiResponse.success("이벤트가 변경되었습니다.", null));
 	}
 
 	@DeleteMapping("/{eventId}")
@@ -116,4 +118,55 @@ public class EventController {
 		return ResponseEntity.ok(ApiResponse.success("이벤트가 취소되었습니다."));
 	}
 
+	// 참여 신청 (login)
+	@PostMapping("/{eventId}/join-requests")
+	public ResponseEntity<ApiResponse<Void>> requestJoin(
+		@AuthenticationPrincipal User user,
+		@PathVariable Long eventId,
+		@RequestBody @Valid EventJoinRequestDto request) {
+
+		eventService.requestJoin(user.getId(), eventId, request);
+
+		return ResponseEntity.ok(ApiResponse.success("이벤트 참여 신청이 완료되었습니다."));
+	}
+
+	// 참여 신청 취소 (login)
+	@DeleteMapping("/join-requests/{requestId}")
+	public ResponseEntity<ApiResponse<Void>> cancelJoinRequest(
+		@AuthenticationPrincipal User user,
+		@PathVariable Long requestId
+	) {
+		eventService.cancelJoinRequest(user.getId(), requestId);
+		return ResponseEntity.ok(ApiResponse.success("이벤트 신청이 취소되었습니다."));
+	}
+
+	// 목록 조회 (host)
+	@GetMapping("/{eventId}/manage/join-requests")
+	public ApiResponse<List<EventJoinRequestResponse>> getJoinRequests(
+		@PathVariable Long eventId,
+		@AuthenticationPrincipal User user) {
+
+		List<EventJoinRequestResponse> joinRequests = eventManageService.getJoinRequests(eventId, user.getId());
+		return ApiResponse.success(joinRequests);
+	}
+
+	// 수락 (host)
+	@PostMapping("/{eventId}/manage/join-requests/{requestId}/approve")
+	public ApiResponse<Void> approve(
+		@PathVariable Long eventId,
+		@PathVariable Long requestId,
+		@AuthenticationPrincipal User user) {
+		eventManageService.approveJoinRequest(eventId, requestId, user.getId());
+		return ApiResponse.success();
+	}
+
+	// 거절 (host)
+	@PostMapping("/{eventId}/manage/join-requests/{requestId}/reject")
+	public ApiResponse<Void> reject(
+		@PathVariable Long eventId,
+		@PathVariable Long requestId,
+		@AuthenticationPrincipal User user) {
+		eventManageService.rejectJoinRequest(eventId, requestId, user.getId());
+		return ApiResponse.success();
+	}
 }
