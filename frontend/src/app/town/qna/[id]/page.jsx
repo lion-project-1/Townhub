@@ -15,21 +15,17 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { deleteQuestion } from "@/app/api/questions";
-import { getQuestion } from "@/app/api/questions"
-
+import { getQuestion } from "@/app/api/questions";
 
 const CATEGORIES = [
-    { label: "맛집", value: "RESTAURANT" },
-    { label: "의료", value: "HOSPITAL" },
-    { label: "생활", value: "LIVING" },
-    { label: "교통", value: "TRAFFIC" },
-    { label: "교육", value: "EDUCATION" },
-    { label: "주거", value: "HOUSING" },
-    { label: "기타", value: "ETC" },
+  { label: "맛집", value: "RESTAURANT" },
+  { label: "의료", value: "HOSPITAL" },
+  { label: "생활", value: "LIVING" },
+  { label: "교통", value: "TRAFFIC" },
+  { label: "교육", value: "EDUCATION" },
+  { label: "주거", value: "HOUSING" },
+  { label: "기타", value: "ETC" },
 ];
-
-
-import { getAnswers, createAnswer, updateAnswer, deleteAnswer, acceptAnswer, unacceptAnswer } from "@/app/api/answers";
 
 // 날짜 포맷팅 함수: ISO 8601 형식을 YYYY-MM-DD HH:mm 형식으로 변환
 import {
@@ -75,57 +71,29 @@ export default function QnaDetailPage() {
 
   const isDevMode = process.env.NEXT_PUBLIC_DEV === "true";
 
+  const [question, setQuestion] = useState(null);
 
-    const [question, setQuestion] = useState(null);
-
-
-    useEffect(() => {
-        async function fetchQuestion() {
-            try {
-                const data = await getQuestion(params.id);
-                setQuestion(data);
-            } catch (e) {
-                console.error(e);
-            }
-        }
-        fetchQuestion();
-    }, [params.id]);
-
-
-
-    if (!question) {
-        return <div>로딩중...</div>;
+  useEffect(() => {
+    async function fetchQuestion() {
+      try {
+        const data = await getQuestion(params.id);
+        setQuestion(data);
+      } catch (e) {
+        console.error(e);
+      }
     }
+    fetchQuestion();
+  }, [params.id]);
 
+  if (!question) {
+    return <div>로딩중...</div>;
+  }
 
-    const categoryLabel =
-        CATEGORIES.find(c => c.value === question.category)?.label
-        ?? question.category;
+  const categoryLabel =
+    CATEGORIES.find((c) => c.value === question.category)?.label ??
+    question.category;
 
-    const formattedDate = question.createdAt.replace("T", " ");
-
-    const answers = [
-    {
-      id: 1,
-      content:
-        '중앙시장 근처에 있는 "전통한식" 강추합니다! 룸도 있고 주차장도 넓어요. 음식도 정말 맛있고 가격도 합리적입니다.',
-      author: "이영희",
-      authorId: "3",
-      likes: 8,
-      isAccepted: true,
-      createdAt: "2025-01-22 10:30",
-    },
-    {
-      id: 2,
-      content:
-        '공원 앞 "우리집밥상"도 괜찮아요. 분위기도 좋고 음식도 깔끔합니다.',
-      author: "박철수",
-      authorId: "4",
-      likes: 3,
-      isAccepted: false,
-      createdAt: "2025-01-22 11:00",
-    },
-  ];
+  const formattedDate = question.createdAt.replace("T", " ");
 
   const isAuthor = user?.id === question.authorId;
 
@@ -287,7 +255,7 @@ export default function QnaDetailPage() {
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3 flex-1">
               <h1 className="text-gray-900">{question.title}</h1>
-              {question.resolved  && (
+              {question.resolved && (
                 <span className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded flex-shrink-0">
                   <CheckCircle className="w-4 h-4" />
                   해결됨
