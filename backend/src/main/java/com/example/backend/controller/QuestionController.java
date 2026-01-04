@@ -49,15 +49,6 @@ public class QuestionController {
         return ResponseEntity.ok(ApiResponse.success(questionId));
     }
 
-    // 질문 리스트
- /*   @GetMapping
-    public  ResponseEntity<ApiResponse<Page<QuestionResponseRequest>>> list(@PageableDefault(
-            page = 0,
-            size = 10
-    ) Pageable pageable) {
-        return ResponseEntity.ok(
-                ApiResponse.success(questionService.getQuestions(pageable)));
-    }*/
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<QuestionResponseRequest>>> list(

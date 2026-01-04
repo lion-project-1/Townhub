@@ -94,14 +94,6 @@ public class QuestionService {
 
 
 
-    /*@Transactional(readOnly = true)
-    public Page<QuestionResponseRequest> getQuestions(Pageable pageable) {
-
-        return questionRepository.findAll(pageable)
-                .map(QuestionResponseRequest::new);
-    }*/
-
-
     // 질문 상세
 
     public QuestionResponseRequest getQuestionData(Long questionId) {
