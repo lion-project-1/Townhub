@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,43 +12,193 @@ import {
   UserMinus,
   Edit,
   Trash2,
+  Settings,
+  Zap,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
+import {
+  getEventDetail,
+  requestJoinEvent,
+  cancelJoinRequest,
+  deleteEvent,
+} from "@/app/api/events";
+import { getEventCtaState } from "@/app/utils/eventStatus";
 
 export default function EventDetailPage() {
   const params = useParams();
   const { user } = useAuth();
   const router = useRouter();
-  const [isJoined, setIsJoined] = useState(false);
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [joinRequestId, setJoinRequestId] = useState(null);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [joinMessage, setJoinMessage] = useState("");
+  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
-  const isMyEvent =
-    params.id === "1" || params.id === "100" || params.id === "999";
+  // 이벤트 상세 조회
+  useEffect(() => {
+    const loadEvent = async () => {
+      try {
+        setLoading(true);
+        const result = await getEventDetail(params.id, token);
+        const eventData = result.data;
 
-  const event = {
-    id: params.id,
-    title: "동네 장터",
-    category: "문화",
-    date: "2025-01-25",
-    time: "14:00",
-    location: "중앙공원",
-    participants: 23,
-    maxParticipants: 50,
-    description:
-      "동네 주민들이 함께하는 벼룩시장입니다. 집에서 사용하지 않는 물건을 판매하거나 필요한 물건을 저렴하게 구매할 수 있습니다. 이웃들과 소통하며 즐거운 시간을 보내세요!",
-    organizer: isMyEvent ? user?.name || "나" : "김영희",
-    organizerId: isMyEvent ? user?.id || "1" : "2",
-    createdAt: "2025-01-10",
-  };
+        // 디버깅 로그 (개발 모드)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('이벤트 상세:', eventData.eventId, eventData.status, eventData.ended);
+        }
+
+        // 이벤트 데이터 변환
+        const formattedEvent = {
+          id: eventData.eventId,
+          title: eventData.title,
+          category: eventData.category,
+          date: eventData.startAt
+            ? new Date(eventData.startAt).toISOString().split("T")[0]
+            : "",
+          time: eventData.startAt
+            ? new Date(eventData.startAt).toLocaleTimeString("ko-KR", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              })
+            : "",
+          location: eventData.eventPlace,
+          participants: eventData.memberCount || 0,
+          maxParticipants: eventData.capacity || 0,
+          description: eventData.description,
+          organizer: eventData.hostNickname,
+          organizerId: eventData.hostUserId,
+          createdAt: eventData.createdAt,
+          startAt: eventData.startAt,
+          members: eventData.members || [],
+          status: eventData.status || null,
+          ended: eventData.ended || false,
+          // 하위 호환성을 위해 유지
+          isEnded: eventData.ended || eventData.isEnded || false,
+          eventStatus: eventData.status || eventData.eventStatus || null,
+        };
+
+        setEvent(formattedEvent);
+
+        // 사용자가 이미 참여 신청했는지 확인
+        // 참여 신청 ID는 나중에 별도 API로 조회하거나, members에서 확인
+        const isMember = eventData.members?.some(
+          (m) => m.userId === user?.id
+        );
+        // 참여 신청 ID는 별도로 관리 필요 (현재는 간단히 처리)
+      } catch (e) {
+        console.error("이벤트 상세 조회 실패:", e);
+        router.push("/town/events");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEvent();
+  }, [params.id, token, router, user?.id]);
+
+  if (loading || !event) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">로딩 중...</div>
+      </div>
+    );
+  }
 
   const isOrganizer = user?.id === event.organizerId;
+  const isJoined = event.members?.some((m) => m.userId === user?.id) || false;
+  
+  // 이벤트 상태에 따른 CTA 상태 계산
+  const ctaState = getEventCtaState(
+    event.status || event.eventStatus,
+    event.maxParticipants,
+    event.participants,
+    event.ended || event.isEnded
+  );
+  
+  // 이벤트 상태 확인: CANCELED 또는 CLOSED면 종료된 것으로 처리
+  const status = event.status || event.eventStatus;
+  const isCanceledOrClosed = status === 'CANCELED' || status === 'CLOSED' || event.ended || event.isEnded;
+  const isEventEnded = isCanceledOrClosed || ctaState.disabled;
 
   const handleJoinToggle = () => {
-    setIsJoined(!isJoined);
+    // 클릭 가드: disabled 조건이면 요청이 나가지 않도록 (필수)
+    if (ctaState.disabled) {
+      return;
+    }
+    
+    if (isJoined) {
+      // 참여 취소
+      // 참여 신청 ID가 필요하므로, 일단 간단히 처리
+      // 실제로는 참여 신청 목록에서 requestId를 찾아야 함
+      if (!joinRequestId) {
+        alert("참여 신청 정보를 찾을 수 없습니다. 페이지를 새로고침해주세요.");
+        return;
+      }
+      
+      handleCancelJoin();
+    } else {
+      // 참여 신청 모달 표시
+      setShowJoinModal(true);
+    }
   };
 
-  const handleDelete = () => {
-    if (confirm("정말로 이 이벤트를 삭제하시겠습니까?")) {
+  const handleJoinSubmit = async () => {
+    try {
+      const result = await requestJoinEvent(
+        params.id,
+        { message: joinMessage },
+        token
+      );
+      
+      alert("이벤트 참여 신청이 완료되었습니다.");
+      setShowJoinModal(false);
+      setJoinMessage("");
+      router.refresh();
+    } catch (e) {
+      console.error("참여 신청 실패:", e);
+      const errorCode = e?.response?.data?.code;
+      if (errorCode) {
+        alert(e.response.data.message || "참여 신청 중 오류가 발생했습니다.");
+      } else {
+        alert("참여 신청 중 오류가 발생했습니다.");
+      }
+    }
+  };
+
+  const handleCancelJoin = async () => {
+    try {
+      await cancelJoinRequest(joinRequestId, token);
+      alert("이벤트 참여 신청이 취소되었습니다.");
+      setJoinRequestId(null);
+      router.refresh();
+    } catch (e) {
+      console.error("참여 취소 실패:", e);
+      const errorCode = e?.response?.data?.code;
+      if (errorCode) {
+        alert(e.response.data.message || "참여 취소 중 오류가 발생했습니다.");
+      } else {
+        alert("참여 취소 중 오류가 발생했습니다.");
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("이 이벤트를 삭제하시겠습니까?")) {
+      return;
+    }
+
+    try {
+      await deleteEvent(params.id, token);
+      alert("이벤트가 삭제되었습니다.");
       router.push("/town/events");
+    } catch (e) {
+      console.error("이벤트 삭제 실패:", e);
+      const errorMessage =
+        e?.response?.data?.message || "이벤트 삭제에 실패했습니다.";
+      alert(errorMessage);
     }
   };
 
@@ -62,17 +212,56 @@ export default function EventDetailPage() {
 
         {/* Main Content */}
         <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6">
+          {/* 종료된 이벤트 안내 */}
+          {isEventEnded && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800">
+                {status === 'CANCELED' 
+                  ? '취소된 이벤트입니다.' 
+                  : status === 'CLOSED' || event.ended || event.isEnded
+                  ? '종료된 이벤트입니다.'
+                  : ctaState.statusBadge === '마감'
+                  ? '마감된 이벤트입니다.'
+                  : '종료된 이벤트입니다.'}
+              </p>
+            </div>
+          )}
+
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
               <h1 className="mb-3 text-gray-900">{event.title}</h1>
-              <span className="inline-block px-3 py-1 bg-green-100 text-green-700 rounded">
-                {event.category}
-              </span>
+              {event.category === 'FLASH' ? (
+                <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded flex items-center gap-1 whitespace-nowrap">
+                  <Zap className="w-4 h-4 flex-shrink-0" />
+                  번개
+                </span>
+              ) : (
+                <span className="inline-block px-3 py-1 bg-green-100 text-green-700 rounded">
+                  {(() => {
+                    const categoryMap = {
+                      'FESTIVAL': '축제',
+                      'VOLUNTEER': '봉사',
+                      'CULTURE': '문화',
+                      'SPORTS': '체육',
+                      'EDUCATION': '교육',
+                      'ETC': '기타',
+                    };
+                    return categoryMap[event.category] || event.category;
+                  })()}
+                </span>
+              )}
             </div>
 
             <div className="flex gap-2">
               {isOrganizer ? (
                 <>
+                  <Link
+                    href={`/town/events/${params.id}/manage`}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <Settings className="w-4 h-4" />
+                    관리
+                  </Link>
                   <Link
                     href={`/town/events/${params.id}/edit`}
                     className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
@@ -91,13 +280,18 @@ export default function EventDetailPage() {
               ) : (
                 <button
                   onClick={handleJoinToggle}
+                  disabled={ctaState.disabled}
                   className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-                    isJoined
+                    ctaState.disabled
+                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                      : isJoined
                       ? "border border-gray-300 hover:bg-gray-50"
                       : "bg-green-600 text-white hover:bg-green-700"
                   }`}
                 >
-                  {isJoined ? (
+                  {ctaState.disabled ? (
+                    ctaState.label
+                  ) : isJoined ? (
                     <>
                       <UserMinus className="w-4 h-4" />
                       참여 취소
@@ -150,6 +344,24 @@ export default function EventDetailPage() {
                   </div>
                 </div>
               </div>
+
+              {event.createdAt && (
+                <div className="flex items-start gap-3 text-gray-600">
+                  <Calendar className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <div className="text-sm text-gray-500">작성일</div>
+                    <div className="text-gray-900">
+                      {(() => {
+                        const date = new Date(event.createdAt);
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, "0");
+                        const day = String(date.getDate()).padStart(2, "0");
+                        return `${year}.${month}.${day}`;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mb-6">
@@ -175,29 +387,72 @@ export default function EventDetailPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="mb-4 text-gray-900">참여자 ({event.participants})</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Array.from({ length: Math.min(event.participants, 12) }).map(
-              (_, index) => (
+            {event.members && event.members.length > 0 ? (
+              event.members.slice(0, 12).map((member) => (
                 <div
-                  key={index}
+                  key={member.userId}
                   className="flex flex-col items-center p-4 rounded-lg border border-gray-200"
                 >
                   <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white mb-2">
-                    {index === 0 ? "김" : "참"}
+                    {member.nickname?.[0] || "?"}
                   </div>
                   <div className="text-sm text-gray-900">
-                    {index === 0 ? event.organizer : `참여자 ${index}`}
+                    {member.nickname || "알 수 없음"}
                   </div>
                 </div>
-              )
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8 text-gray-500">
+                참여자가 없습니다.
+              </div>
             )}
           </div>
-          {event.participants > 12 && (
+          {event.members && event.members.length > 12 && (
             <div className="text-center mt-4 text-gray-500">
-              외 {event.participants - 12}명
+              외 {event.members.length - 12}명
             </div>
           )}
         </div>
       </div>
+
+      {/* 참여 신청 모달 */}
+      {showJoinModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl w-full max-w-md p-6 relative">
+            <button
+              onClick={() => setShowJoinModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h2 className="text-lg text-gray-900 mb-4">참여 신청 메시지</h2>
+
+            <textarea
+              value={joinMessage}
+              onChange={(e) => setJoinMessage(e.target.value)}
+              placeholder="이벤트 주최자에게 전달할 참여 신청 메시지를 작성해주세요."
+              className="w-full h-32 border border-gray-300 rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setShowJoinModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleJoinSubmit}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                참여 신청
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
