@@ -1,5 +1,7 @@
 package com.example.backend.controller;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -8,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.backend.dto.EventCalendarResponse;
+import com.example.backend.dto.EventCalendarSearchCondition;
 import com.example.backend.dto.EventListResponse;
 import com.example.backend.dto.EventSearchCondition;
 import com.example.backend.dto.FlashEventListResponse;
@@ -44,4 +48,13 @@ public class EventController {
 
 		return ResponseEntity.ok(ApiResponse.success(eventList));
 	}
+
+	@GetMapping("/calendar")
+	public ResponseEntity<ApiResponse<List<EventCalendarResponse>>> getEventCalendar(
+		EventCalendarSearchCondition condition
+	) {
+		List<EventCalendarResponse> events = eventService.getCalendarEvents(condition);
+		return ResponseEntity.ok(ApiResponse.success(events));
+	}
+
 }

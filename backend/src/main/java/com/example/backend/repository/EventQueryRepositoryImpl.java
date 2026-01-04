@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import com.example.backend.domain.QEvent;
 import com.example.backend.domain.QEventMember;
 import com.example.backend.domain.QLocation;
+import com.example.backend.dto.EventCalendarResponse;
+import com.example.backend.dto.EventCalendarSearchCondition;
 import com.example.backend.dto.EventListResponse;
 import com.example.backend.dto.EventSearchCondition;
 import com.example.backend.dto.FlashEventListResponse;
@@ -139,6 +141,39 @@ public class EventQueryRepositoryImpl implements EventQueryRepository {
 			.fetchOne();
 
 		return new PageImpl<>(content, pageable, total != null ? total : 0);
+	}
+
+	@Override
+	public List<EventCalendarResponse> findEventListForCalendar(
+		EventCalendarSearchCondition condition
+	) {
+		QEvent event = QEvent.event;
+		QLocation location = QLocation.location;
+
+		LocalDateTime start = condition.getFrom().atStartOfDay();
+		LocalDateTime endExclusive = condition.getTo().plusDays(1).atStartOfDay();
+
+		return queryFactory
+			.select(Projections.constructor(
+				EventCalendarResponse.class,
+				event.id,
+				event.title,
+				event.startAt,
+				event.status
+			))
+			.from(event)
+			.join(event.location, location)
+			.where(
+				event.category.ne(EventCategory.FLASH),
+				// 캘린더에는 RECRUITING / CLOSED만 표시 (CANCELED 제외)
+				event.status.in(EventStatus.RECRUITING, EventStatus.CLOSED),
+				event.startAt.goe(start),
+				event.startAt.lt(endExclusive),
+				provinceEq(condition.getProvince()),
+				cityEq(condition.getCity())
+			)
+			.orderBy(event.startAt.asc())
+			.fetch();
 	}
 
 	private BooleanExpression categoryEq(EventCategory category) {
