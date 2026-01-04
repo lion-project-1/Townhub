@@ -57,14 +57,23 @@ public enum ErrorCode {
 	ALREADY_MEETING_REQUESTED(HttpStatus.BAD_REQUEST, "MEETING-005", "이미 모임에 신청하셨습니다."),
 	MEETING_IS_FULL(HttpStatus.BAD_REQUEST, "MEETING-006", "이미 모임의 정원이 초과되었습니다."),
 	ALREADY_MEETING_MEMBER(HttpStatus.BAD_REQUEST, "MEETING-007", "이미 모임의 멤버입니다."),
-	MEETING_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND,"MEETING-008","모임 가입 신청을 찾을 수 없습니다."),
-	MEETING_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND,"MEETING-009","해당 멤버를 모임에서 조회할 수 없습니다."),
+	MEETING_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "MEETING-008", "모임 가입 신청을 찾을 수 없습니다."),
+	MEETING_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEETING-009", "해당 멤버를 모임에서 조회할 수 없습니다."),
 	MEETING_HOST_CANNOT_BE_REMOVED(HttpStatus.BAD_REQUEST, "MEETING-010", "방장은 내보낼 수 없습니다."),
 
 	// Event,
 	INVALID_EVENT_CAPACITY(HttpStatus.BAD_REQUEST, "EVENT-001", "이벤트의 인원 범위는 2~100명 사이입니다."),
 	INVALID_EVENT_START_AT(HttpStatus.BAD_REQUEST, "EVENT-002", "이벤트 시작 시간은 현재 시각 이후여야 합니다."),
 	INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "EVENT-003", "시작 날짜는 종료 날짜보다 이후일 수 없습니다."),
+	EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "EVENT-004", "해당 이벤트가 존재하지 않습니다."),
+	EVENT_HOST_ONLY(HttpStatus.FORBIDDEN, "EVENT-005", "이벤트 주최자만 접근할 수 있습니다."),
+	INVALID_FLASH_START_AT(HttpStatus.BAD_REQUEST, "EVENT-006", "번개 이벤트는 당일만 생성 가능합니다."),
+	EVENT_IS_FULL(HttpStatus.BAD_REQUEST, "EVENT-007", "이미 이벤트의 정원이 초과되었습니다."),
+	EVENT_NOT_OPEN(HttpStatus.BAD_REQUEST, "EVENT_008", "모집이 종료되었거나 취소된 이벤트는 신청할 수 없습니다."),
+	ALREADY_EVENT_REQUESTED(HttpStatus.CONFLICT, "EVENT_009", "이미 참여 신청한 이벤트입니다."),
+	EVENT_JOIN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "EVENT_010", "참여 신청 내역을 찾을 수 없습니다."),
+	EVENT_JOIN_REQUEST_FORBIDDEN(HttpStatus.FORBIDDEN, "EVENT_011", "본인의 참여 신청만 취소할 수 있습니다."),
+	EVENT_JOIN_REQUEST_NOT_PENDING(HttpStatus.BAD_REQUEST, "EVENT_012", "대기 상태의 참여 신청만 취소할 수 있습니다."),
 
 	;
 

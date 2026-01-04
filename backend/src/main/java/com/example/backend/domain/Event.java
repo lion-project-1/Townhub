@@ -75,24 +75,34 @@ public class Event extends BaseEntity {
 	@OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<EventMember> members = new ArrayList<>();
 
+	public void cancel() {
+		this.status = EventStatus.CANCELED;
+	}
+
 	public void update(
 		String title,
 		String description,
 		EventCategory category,
+		Location location,
 		String eventPlace,
 		LocalDateTime startAt,
-		Integer capacity) {
-
+		Integer capacity
+	) {
 		if (hasText(title)) {
 			this.title = title;
 		}
 
+		// 빈 문자열 허용 정책이면 null 체크만
 		if (description != null) {
 			this.description = description;
 		}
 
 		if (category != null) {
 			this.category = category;
+		}
+
+		if (location != null) {
+			this.location = location;
 		}
 
 		if (hasText(eventPlace)) {

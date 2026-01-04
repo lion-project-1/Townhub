@@ -31,7 +31,7 @@ import lombok.NoArgsConstructor;
 		@UniqueConstraint(columnNames = {"event_id", "user_id"})
 	}
 )
-public class EventJoinRequest {
+public class EventJoinRequest extends BaseEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
