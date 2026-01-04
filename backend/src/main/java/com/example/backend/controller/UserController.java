@@ -92,4 +92,20 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(myInfo));
     }
 
+    @PatchMapping("/me")
+    public ApiResponse<Void> updateMe(
+            @AuthenticationPrincipal User user,
+            @RequestBody UserUpdateRequest request) {
+        userService.updateUser(user.getId(), request);
+        return ApiResponse.success("사용자 정보가 수정되었습니다.");
+    }
+
+    @DeleteMapping("/me")
+    public ApiResponse<Void> withdraw(
+            @AuthenticationPrincipal User user,
+            @RequestBody UserWithdrawRequest request) {
+        userService.withdraw(user.getId(), request.getCurrentPassword());
+        return ApiResponse.success("회원 탈퇴가 완료되었습니다.");
+    }
+
 }

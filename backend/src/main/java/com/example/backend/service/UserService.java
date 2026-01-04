@@ -1,5 +1,6 @@
 package com.example.backend.service;
 
+import com.example.backend.domain.MeetingMember;
 import com.example.backend.domain.RefreshToken;
 import com.example.backend.domain.Location;
 import com.example.backend.domain.User;
@@ -8,16 +9,13 @@ import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
 import com.example.backend.repository.AnswerRepository;
 import com.example.backend.repository.LocationRepository;
+import com.example.backend.repository.MeetingMemberRepository;
 import com.example.backend.repository.MeetingRepository;
 import com.example.backend.repository.QuestionRepository;
 import com.example.backend.repository.RefreshTokenRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.security.jwt.JwtProvider;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +33,7 @@ public class UserService {
     // private final EventRepository eventRepository;
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
+    private final MeetingMemberRepository meetingMemberRepository;
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
@@ -160,5 +159,54 @@ public class UserService {
                 .events(-1)//eventRepository.countByUserId(userId))
                 .qna(questionRepository.countByUserId(userId))
                 .build();
+    }
+
+    @Transactional
+    public void updateUser(Long userId, UserUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        checkPassword(request.getCurrentPassword(), user);
+
+        if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
+            user.changePassword(passwordEncoder.encode(request.getNewPassword()));
+        }
+
+        String[] locationInfo = parseLocationInfo(request);
+
+        Location location = locationRepository
+                .findByProvinceAndCity(locationInfo[0], locationInfo[1])
+                .orElseThrow(() -> new CustomException(ErrorCode.LOCATION_NOT_FOUND));
+
+        user.changeLocation(location);
+    }
+
+    private static String[] parseLocationInfo(UserUpdateRequest request) {
+        String locationStr = request.getLocation();
+        String[] parts = locationStr.split(" ");
+        if (parts.length < 2) {
+            throw new CustomException(ErrorCode.LOCATION_NOT_FOUND);
+        }
+
+        return parts;
+    }
+
+    @Transactional
+    public void withdraw(Long userId, String currentPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        checkPassword(currentPassword, user);
+
+        meetingMemberRepository.deleteByUser(user);
+        answerRepository.deleteByUser(user);
+        questionRepository.deleteByUser(user);
+        userRepository.deleteById(userId);
+    }
+
+    private void checkPassword(String currentPassword, User user) {
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new CustomException(ErrorCode.INVALID_PASSWORD);
+        }
     }
 }
