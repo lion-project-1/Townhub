@@ -71,9 +71,7 @@ public class EventService {
 	public EventDetailResponse getEventDetail(User user, Long eventId) {
 		Event event = getEvent(eventId);
 
-		// 참여자(MEMBER)만 응답
 		List<EventMemberResponse> members = event.getMembers().stream()
-			.filter(m -> m.getRole() == ParticipantRole.MEMBER)
 			.map(EventMapper::toEventMemberResponse)
 			.toList();
 
