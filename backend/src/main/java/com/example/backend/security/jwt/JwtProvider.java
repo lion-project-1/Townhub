@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtProvider {
@@ -52,6 +53,7 @@ public class JwtProvider {
     public String createRefreshToken(Long userId) {
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
+                .setId(UUID.randomUUID().toString()) // 회전/동시성 상황에서도 토큰 유니크 보장
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + refreshExpire))
                 .signWith(getSigningKey())

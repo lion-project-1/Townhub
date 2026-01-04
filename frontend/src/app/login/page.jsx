@@ -5,17 +5,32 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { LogIn } from "lucide-react";
+import { useTown } from "@/app/contexts/TownContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login } = useAuth();
+  const { selectedTown } = useTown();
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await login(email, password);
-    router.push("/town-select");
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await login(email, password);
+      // 로그인 성공 후: 루트로(요청사항). 동네 선택이 되어 있으면 /town으로
+      if (selectedTown) router.replace("/town");
+      else router.replace("/");
+    } catch (err) {
+      setError(err?.message || "로그인에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -40,6 +55,7 @@ export default function LoginPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="email@example.com"
                 required
+                disabled={isSubmitting}
               />
             </div>
 
@@ -52,14 +68,18 @@ export default function LoginPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="••••••••"
                 required
+                disabled={isSubmitting}
               />
             </div>
 
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
             <button
               type="submit"
-              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              disabled={isSubmitting}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              로그인
+              {isSubmitting ? "로그인 중..." : "로그인"}
             </button>
           </form>
 

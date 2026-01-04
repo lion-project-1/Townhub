@@ -1,25 +1,21 @@
-const BASE_URL = "http://localhost:8080/api/locations";
+"use client";
 
-export async function searchTowns(keyword, token) {
-  if (!keyword || keyword.trim().length < 2) {
-    return [];
-  }
+import { authFetch } from "@/app/api/authFetch";
+import { getApiBaseUrl } from "@/app/api/authApi";
 
-  const res = await fetch(
-    `${BASE_URL}?keyword=${encodeURIComponent(keyword)}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: "include",
-    }
-  );
+const API_BASE_URL = getApiBaseUrl();
+const BASE_URL = `${API_BASE_URL}/api/locations`;
 
-  if (!res.ok) {
-    throw new Error("동네 검색 실패");
-  }
+export async function searchTowns(keyword) {
+  if (!keyword || keyword.trim().length < 2) return [];
 
+  const res = await authFetch(`${BASE_URL}?keyword=${encodeURIComponent(keyword)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) throw new Error("동네 검색 실패");
   return res.json();
 }
+
+

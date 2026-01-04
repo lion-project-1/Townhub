@@ -1,40 +1,21 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Save } from "lucide-react";
-import { createMeeting } from "@/app/api/meeting";
-import { useAuth } from "@/app/contexts/AuthContext";
-import { useTown } from "@/app/contexts/TownContext";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Save } from 'lucide-react';
 
-/**
- * 화면용 label ↔ 백엔드 enum value 매핑
- */
-const CATEGORIES = [
-  { label: "운동", value: "SPORTS" },
-  { label: "문화", value: "CULTURE" },
-  { label: "취미", value: "HOBBY" },
-  { label: "스터디", value: "STUDY" },
-  { label: "반려동물", value: "PET" },
-  { label: "기타", value: "ETC" },
-];
+const CATEGORIES = ['운동', '문화', '취미', '스터디', '반려동물', '기타'];
 
 export default function GroupNewPage() {
   const router = useRouter();
-  //const { token } = useAuth();
-  const { selectedTown } = useTown();
-  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-
   const [formData, setFormData] = useState({
-    title: "",
-    category: "",
-    description: "",
-    meetingPlace: "",
-    schedule: "",
-    capacity: "",
+    name: '',
+    category: '',
+    description: '',
+    location: '',
+    schedule: '',
+    maxMembers: '',
   });
-
-  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -43,32 +24,9 @@ export default function GroupNewPage() {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
-    try {
-      setLoading(true);
-
-      const payload = {
-        title: formData.title,
-        category: formData.category,
-        description: formData.description,
-        meetingPlace: formData.meetingPlace,
-        schedule: formData.schedule,
-        locationId: selectedTown.id,
-        capacity: Number(formData.capacity),
-      };
-
-      const result = await createMeeting(payload, token);
-
-      // 생성된 meetingId로 상세 페이지 이동
-      router.push(`/town/groups/${result.data.meetingId}`);
-    } catch (e) {
-      console.error(e);
-      alert("모임 생성에 실패했습니다.");
-    } finally {
-      setLoading(false);
-    }
+    router.push('/town/groups/1');
   };
 
   return (
@@ -76,17 +34,14 @@ export default function GroupNewPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="mb-8 text-gray-900">새 모임 만들기</h1>
 
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-xl border border-gray-200 p-8"
-        >
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-8">
           <div className="space-y-6">
             <div>
               <label className="block mb-2 text-gray-700">모임 이름 *</label>
               <input
                 type="text"
-                name="title"
-                value={formData.title}
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="예: 주말 등산 모임"
@@ -105,8 +60,8 @@ export default function GroupNewPage() {
               >
                 <option value="">선택하세요</option>
                 {CATEGORIES.map((category) => (
-                  <option key={category.value} value={category.value}>
-                    {category.label}
+                  <option key={category} value={category}>
+                    {category}
                   </option>
                 ))}
               </select>
@@ -129,8 +84,8 @@ export default function GroupNewPage() {
               <label className="block mb-2 text-gray-700">장소 *</label>
               <input
                 type="text"
-                name="meetingPlace"
-                value={formData.meetingPlace}
+                name="location"
+                value={formData.location}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="예: 북한산 일대"
@@ -155,8 +110,8 @@ export default function GroupNewPage() {
               <label className="block mb-2 text-gray-700">최대 인원 *</label>
               <input
                 type="number"
-                name="capacity"
-                value={formData.capacity}
+                name="maxMembers"
+                value={formData.maxMembers}
                 onChange={handleChange}
                 min="2"
                 max="100"
@@ -172,17 +127,15 @@ export default function GroupNewPage() {
               type="button"
               onClick={() => router.back()}
               className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
-              disabled={loading}
             >
               취소
             </button>
             <button
               type="submit"
-              disabled={loading}
               className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
             >
               <Save className="w-5 h-5" />
-              {loading ? "생성 중..." : "만들기"}
+              만들기
             </button>
           </div>
         </form>

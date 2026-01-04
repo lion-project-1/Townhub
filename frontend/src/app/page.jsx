@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import {
   Users,
   Calendar,
@@ -13,9 +14,16 @@ import { useAuth } from "./contexts/AuthContext";
 import { useTown } from "./contexts/TownContext";
 
 export default function MainPage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const { selectedTown } = useTown();
   const router = useRouter();
+
+  useEffect(() => {
+    // 요구사항: 루트(/)에서 비로그인이면 /login으로 이동
+    if (!isLoading && !user) {
+      router.replace("/login");
+    }
+  }, [isLoading, user, router]);
 
   const handleGetStarted = () => {
     if (user) {
@@ -25,9 +33,12 @@ export default function MainPage() {
         router.push("/town-select");
       }
     } else {
-      router.push("/signup");
+      router.push("/login");
     }
   };
+
+  // 리다이렉트 중 UI 플래시 방지
+  if (!user) return null;
 
   return (
     <div className="min-h-[calc(100vh-4rem)]">
