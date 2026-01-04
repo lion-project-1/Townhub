@@ -68,7 +68,7 @@ public class EventService {
 		return eventRepository.findEventListForCalendar(condition);
 	}
 
-	public EventDetailResponse getEventDetail(Long eventId) {
+	public EventDetailResponse getEventDetail(User user, Long eventId) {
 		Event event = getEvent(eventId);
 
 		// 참여자(MEMBER)만 응답
@@ -77,13 +77,20 @@ public class EventService {
 			.map(EventMapper::toEventMemberResponse)
 			.toList();
 
-		long memberCount = event.getMembers().stream()
-			.filter(m -> m.getRole() == ParticipantRole.MEMBER)
-			.count();
+		long memberCount = members.size();
 
 		boolean isEnded = calculateIsEnded(event.getStartAt());
 
-		return toEventDetailResponse(event, members, memberCount, isEnded);
+		JoinRequestStatus joinRequestStatus = null;
+
+		if (user != null) {
+			joinRequestStatus = eventJoinRequestRepository
+				.findByEventAndUser(event, user)
+				.map(EventJoinRequest::getStatus)
+				.orElse(null); // 또는 JoinRequestStatus.NONE
+		}
+
+		return toEventDetailResponse(event, members, memberCount, isEnded, joinRequestStatus);
 	}
 
 	@Transactional
