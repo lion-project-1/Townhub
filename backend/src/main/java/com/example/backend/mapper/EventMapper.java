@@ -11,6 +11,7 @@ import com.example.backend.dto.EventCreateRequest;
 import com.example.backend.dto.EventDetailResponse;
 import com.example.backend.dto.EventMemberResponse;
 import com.example.backend.enums.EventStatus;
+import com.example.backend.enums.JoinRequestStatus;
 
 public class EventMapper {
 
@@ -18,7 +19,8 @@ public class EventMapper {
 		Event event,
 		List<EventMemberResponse> members,
 		long memberCount,
-		boolean isEnded
+		boolean isEnded,
+		JoinRequestStatus joinRequestStatus
 	) {
 		Location location = event.getLocation();
 		User host = event.getHost();
@@ -39,6 +41,7 @@ public class EventMapper {
 			.hostUserId(host.getId())
 			.hostNickname(host.getNickname())
 			.isEnded(isEnded)
+			.joinRequestStatus(joinRequestStatus)
 			.members(members)
 			.build();
 	}

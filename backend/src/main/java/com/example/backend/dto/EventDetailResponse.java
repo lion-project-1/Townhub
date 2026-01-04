@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.example.backend.enums.EventCategory;
 import com.example.backend.enums.EventStatus;
+import com.example.backend.enums.JoinRequestStatus;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -34,6 +35,7 @@ public class EventDetailResponse {
 	private String hostNickname;
 
 	private boolean isEnded;
+	private JoinRequestStatus joinRequestStatus;
 
 	private List<EventMemberResponse> members;
 }
