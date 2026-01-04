@@ -1,13 +1,17 @@
+import { authFetch } from "@/app/api/authFetch";
+import { getApiBaseUrl } from "@/app/api/authApi";
 const BASE_URL = "http://localhost:8080/api/questions";
 const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
 
-export async function updateQuestion(id, data, token) {
-  const res = await fetch(`${BASE_URL}/${id}`, {
+const API_BASE_URL = getApiBaseUrl();
+const BASE_URL = `${API_BASE_URL}/api/questions`;
+
+export async function updateQuestion(id, data) {
+  const res = await authFetch(`${BASE_URL}/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
@@ -19,12 +23,9 @@ export async function updateQuestion(id, data, token) {
   return res.json();
 }
 
-export async function deleteQuestion(id, token) {
-  const res = await fetch(`${BASE_URL}/${id}`, {
+export async function deleteQuestion(id) {
+  const res = await authFetch(`${BASE_URL}/${id}`, {
     method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   });
 
   if (!res.ok) {

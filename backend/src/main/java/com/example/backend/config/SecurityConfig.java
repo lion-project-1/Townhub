@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -24,7 +23,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
-@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
@@ -38,7 +36,14 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // OPTIONS 요청은 인증 없이 허용
-                        .requestMatchers("/api/users/login", "/api/users/signup", "/api/users/token/reissue", "/api/users/logout").permitAll()
+                        .requestMatchers(
+                                "/api/users/login",
+                                "/api/users/signup",
+                                "/api/users/token/reissue",
+                                "/api/users/logout",
+                                "/api/users/check-email",
+                                "/api/users/check-nickname"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
 
@@ -68,7 +73,8 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
         // 허용 도메인
         configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:3000"
+                "http://localhost:3000",
+                "http://127.0.0.1:3000"
         ));
 
         // 허용 HTTP 메서드
@@ -82,9 +88,9 @@ public class SecurityConfig {
         ));
 
         // 노출 헤더
-//        configuration.setExposedHeaders(List.of(
-//                "Authorization"
-//        ));
+        configuration.setExposedHeaders(List.of(
+                "Authorization"
+        ));
 
         configuration.setMaxAge(3600L); // 캐시 시간
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

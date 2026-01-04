@@ -63,6 +63,7 @@ public class UserService {
         }
 
         refreshTokenRepository.deleteByUserId(user.getId()); // 기존 RefreshToken 제거
+        refreshTokenRepository.flush(); // UNIQUE(token) 충돌 방지: 삭제를 DB에 먼저 반영
 
         String accessToken = jwtProvider.createAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtProvider.createRefreshToken(user.getId());
@@ -88,6 +89,13 @@ public class UserService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public UserMeResponse me(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        return UserMeResponse.from(user);
+    }
+
     @Transactional
     public TokenReissueResult reissue(String refreshToken) {
         RefreshToken oldRefreshToken = refreshTokenRepository.findByToken(refreshToken)
@@ -101,6 +109,7 @@ public class UserService {
 
         // AccessToken 재발급할 때 RefreshToken 도 삭제 후 재발급
         refreshTokenRepository.delete(oldRefreshToken);
+        refreshTokenRepository.flush(); // UNIQUE(token) 충돌 방지: 삭제를 DB에 먼저 반영
 
         User user = userRepository.findById(oldRefreshToken.getUserId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -130,5 +139,21 @@ public class UserService {
         if (!StringUtils.hasText(refreshToken)) return; // 쿠키 있는지 확인
 
         refreshTokenRepository.deleteByToken(refreshToken);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isEmailAvailable(String email) {
+        if (!StringUtils.hasText(email)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        return !userRepository.existsByEmail(email);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isNicknameAvailable(String nickname) {
+        if (!StringUtils.hasText(nickname)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        return !userRepository.existsByNickname(nickname);
     }
 }
