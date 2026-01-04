@@ -17,6 +17,7 @@ import com.example.backend.dto.EventSearchCondition;
 import com.example.backend.dto.FlashEventListResponse;
 import com.example.backend.enums.EventCategory;
 import com.example.backend.enums.EventStatus;
+import com.example.backend.enums.ParticipantRole;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -36,7 +37,6 @@ public class EventQueryRepositoryImpl implements EventQueryRepository {
 		QEvent event = QEvent.event;
 		QEventMember member = QEventMember.eventMember;
 		QLocation location = QLocation.location;
-
 		List<EventListResponse> content = queryFactory
 			.select(Projections.constructor(
 				EventListResponse.class,
@@ -56,6 +56,7 @@ public class EventQueryRepositoryImpl implements EventQueryRepository {
 			.from(event)
 			.join(event.location, location)
 			.leftJoin(event.members, member)
+			.on(member.role.eq(ParticipantRole.MEMBER))
 			.where(
 				event.category.ne(EventCategory.FLASH),
 				categoryEq(condition.getCategory()),
@@ -112,6 +113,7 @@ public class EventQueryRepositoryImpl implements EventQueryRepository {
 			.from(event)
 			.join(event.location, location)
 			.leftJoin(event.members, member)
+			.on(member.role.eq(ParticipantRole.MEMBER))
 			.where(
 				event.category.eq(EventCategory.FLASH),
 				event.status.eq(EventStatus.RECRUITING),
