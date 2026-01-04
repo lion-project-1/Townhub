@@ -127,11 +127,15 @@ export async function getEventCalendar(condition, token) {
     credentials: "include",
   });
 
+  const data = await res.json();
+
   if (!res.ok) {
-    throw new Error("이벤트 캘린더 조회 실패");
+    const error = new Error("이벤트 캘린더 조회 실패");
+    error.response = { data, status: res.status };
+    throw error;
   }
 
-  return res.json();
+  return data;
 }
 
 /**
@@ -386,5 +390,57 @@ export async function deleteEvent(eventId, token) {
   }
 
   return responseData;
+}
+
+/**
+ * 이벤트 참여자 목록 조회 (호스트 전용)
+ * @param {number|string} eventId - 이벤트 ID
+ * @param {string} token - 인증 토큰
+ */
+export async function getEventManageMembers(eventId, token) {
+  const res = await fetch(`${BASE_URL}/${eventId}/manage/members`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    credentials: "include",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const error = new Error("멤버 목록 조회 실패");
+    error.response = { data, status: res.status };
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * 이벤트 참여자 삭제 (호스트 전용)
+ * @param {number|string} eventId - 이벤트 ID
+ * @param {number|string} memberId - 멤버 ID
+ * @param {string} token - 인증 토큰
+ */
+export async function removeEventManageMember(eventId, memberId, token) {
+  const res = await fetch(`${BASE_URL}/${eventId}/manage/members/${memberId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    credentials: "include",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const error = new Error("멤버 삭제 실패");
+    error.response = { data, status: res.status };
+    throw error;
+  }
+
+  return data;
 }
 

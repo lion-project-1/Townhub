@@ -25,6 +25,7 @@ import com.example.backend.dto.EventDetailResponse;
 import com.example.backend.dto.EventJoinRequestDto;
 import com.example.backend.dto.EventJoinRequestResponse;
 import com.example.backend.dto.EventListResponse;
+import com.example.backend.dto.EventManageMemberResponse;
 import com.example.backend.dto.EventSearchCondition;
 import com.example.backend.dto.EventUpdateRequest;
 import com.example.backend.dto.FlashEventListResponse;
@@ -169,5 +170,23 @@ public class EventController {
 		@AuthenticationPrincipal User user) {
 		eventManageService.rejectJoinRequest(eventId, requestId, user.getId());
 		return ApiResponse.success();
+	}
+
+	@GetMapping("{eventId}/manage/members")
+	public ApiResponse<List<EventManageMemberResponse>> getMembers(
+		@PathVariable Long eventId,
+		@AuthenticationPrincipal User user) {
+
+		return ApiResponse.success(eventManageService.getMembers(eventId, user.getId()));
+	}
+
+	@DeleteMapping("/{eventId}/manage/members/{memberId}")
+	public ApiResponse<Void> removeMember(
+		@PathVariable Long eventId,
+		@PathVariable Long memberId,
+		@AuthenticationPrincipal User user) {
+
+		eventManageService.removeMember(eventId, memberId, user.getId());
+		return ApiResponse.success("멤버를 삭제했습니다.");
 	}
 }

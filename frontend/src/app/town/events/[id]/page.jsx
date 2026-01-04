@@ -34,6 +34,50 @@ export default function EventDetailPage() {
   const [joinMessage, setJoinMessage] = useState("");
   const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
+  // 이벤트 데이터 포맷팅 함수
+  const formatEventData = (eventData) => ({
+    id: eventData.eventId,
+    title: eventData.title,
+    category: eventData.category,
+    date: eventData.startAt
+      ? new Date(eventData.startAt).toISOString().split("T")[0]
+      : "",
+    time: eventData.startAt
+      ? new Date(eventData.startAt).toLocaleTimeString("ko-KR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })
+      : "",
+    location: eventData.eventPlace,
+    participants: eventData.memberCount || 0,
+    maxParticipants: eventData.capacity || 0,
+    description: eventData.description,
+    organizer: eventData.hostNickname,
+    organizerId: eventData.hostUserId,
+    hostUserId: eventData.hostUserId,
+    createdAt: eventData.createdAt,
+    startAt: eventData.startAt,
+    members: eventData.members || [],
+    status: eventData.status || null,
+    ended: eventData.ended || false,
+    // 하위 호환성을 위해 유지
+    isEnded: eventData.ended || eventData.isEnded || false,
+    eventStatus: eventData.status || eventData.eventStatus || null,
+    joinRequestStatus: eventData.joinRequestStatus || null,
+    joinRequestId: eventData.joinRequestId || null,
+  });
+
+  // 날짜 포맷팅 함수
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}.${month}.${day}`;
+  };
+
   // 이벤트 상세 조회
   useEffect(() => {
     const loadEvent = async () => {
@@ -42,46 +86,7 @@ export default function EventDetailPage() {
         const result = await getEventDetail(params.id, token);
         const eventData = result.data;
 
-        // 디버깅 로그 (개발 모드)
-        if (process.env.NODE_ENV === 'development') {
-          console.log('이벤트 상세:', eventData.eventId, eventData.status, eventData.ended);
-        }
-
-        // 이벤트 데이터 변환
-        const formattedEvent = {
-          id: eventData.eventId,
-          title: eventData.title,
-          category: eventData.category,
-          date: eventData.startAt
-            ? new Date(eventData.startAt).toISOString().split("T")[0]
-            : "",
-          time: eventData.startAt
-            ? new Date(eventData.startAt).toLocaleTimeString("ko-KR", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              })
-            : "",
-          location: eventData.eventPlace,
-          participants: eventData.memberCount || 0,
-          maxParticipants: eventData.capacity || 0,
-          description: eventData.description,
-          organizer: eventData.hostNickname,
-          organizerId: eventData.hostUserId,
-          hostUserId: eventData.hostUserId,
-          createdAt: eventData.createdAt,
-          startAt: eventData.startAt,
-          members: eventData.members || [],
-          status: eventData.status || null,
-          ended: eventData.ended || false,
-          // 하위 호환성을 위해 유지
-          isEnded: eventData.ended || eventData.isEnded || false,
-          eventStatus: eventData.status || eventData.eventStatus || null,
-          joinRequestStatus: eventData.joinRequestStatus || null,
-          joinRequestId: eventData.joinRequestId || null,
-        };
-
-        setEvent(formattedEvent);
+        setEvent(formatEventData(eventData));
       } catch (e) {
         console.error("이벤트 상세 조회 실패:", e);
         router.push("/town/events");
@@ -119,41 +124,7 @@ export default function EventDetailPage() {
   const refetchEvent = async () => {
     try {
       const result = await getEventDetail(params.id, token);
-      const eventData = result.data;
-
-      const formattedEvent = {
-        id: eventData.eventId,
-        title: eventData.title,
-        category: eventData.category,
-        date: eventData.startAt
-          ? new Date(eventData.startAt).toISOString().split("T")[0]
-          : "",
-        time: eventData.startAt
-          ? new Date(eventData.startAt).toLocaleTimeString("ko-KR", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            })
-          : "",
-        location: eventData.eventPlace,
-        participants: eventData.memberCount || 0,
-        maxParticipants: eventData.capacity || 0,
-        description: eventData.description,
-        organizer: eventData.hostNickname,
-        organizerId: eventData.hostUserId,
-        hostUserId: eventData.hostUserId,
-        createdAt: eventData.createdAt,
-        startAt: eventData.startAt,
-        members: eventData.members || [],
-        status: eventData.status || null,
-        ended: eventData.ended || false,
-        isEnded: eventData.ended || eventData.isEnded || false,
-        eventStatus: eventData.status || eventData.eventStatus || null,
-        joinRequestStatus: eventData.joinRequestStatus || null,
-        joinRequestId: eventData.joinRequestId || null,
-      };
-
-      setEvent(formattedEvent);
+      setEvent(formatEventData(result.data));
     } catch (e) {
       console.error("이벤트 재조회 실패:", e);
     }
@@ -409,13 +380,7 @@ export default function EventDetailPage() {
                   <div>
                     <div className="text-sm text-gray-500">작성일</div>
                     <div className="text-gray-900">
-                      {(() => {
-                        const date = new Date(event.createdAt);
-                        const year = date.getFullYear();
-                        const month = String(date.getMonth() + 1).padStart(2, "0");
-                        const day = String(date.getDate()).padStart(2, "0");
-                        return `${year}.${month}.${day}`;
-                      })()}
+                      {formatDate(event.createdAt)}
                     </div>
                   </div>
                 </div>
@@ -443,22 +408,34 @@ export default function EventDetailPage() {
 
         {/* Participants */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="mb-4 text-gray-900">참여자 ({event.participants})</h2>
+          <h2 className="mb-4 text-gray-900">참여자 ({event.members?.length || event.participants})</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {event.members && event.members.length > 0 ? (
-              event.members.slice(0, 12).map((member) => (
-                <div
-                  key={member.userId}
-                  className="flex flex-col items-center p-4 rounded-lg border border-gray-200"
-                >
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white mb-2">
-                    {member.nickname?.[0] || "?"}
+              event.members.slice(0, 12).map((member) => {
+                const isHost = member.role === "HOST";
+                return (
+                  <div
+                    key={member.userId}
+                    className="flex flex-col items-center p-4 rounded-lg border border-gray-200"
+                  >
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white mb-2 ${
+                        isHost
+                          ? "bg-gradient-to-br from-blue-400 to-blue-600"
+                          : "bg-gradient-to-br from-green-400 to-green-600"
+                      }`}
+                    >
+                      {member.nickname?.[0] || "?"}
+                    </div>
+                    <div className="text-sm text-gray-900">
+                      {member.nickname || "알 수 없음"}
+                    </div>
+                    {isHost && (
+                      <span className="text-xs text-blue-600 mt-1">주최자</span>
+                    )}
                   </div>
-                  <div className="text-sm text-gray-900">
-                    {member.nickname || "알 수 없음"}
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="col-span-full text-center py-8 text-gray-500">
                 참여자가 없습니다.
