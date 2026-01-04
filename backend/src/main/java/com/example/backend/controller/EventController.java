@@ -25,6 +25,7 @@ import com.example.backend.dto.EventDetailResponse;
 import com.example.backend.dto.EventJoinRequestDto;
 import com.example.backend.dto.EventJoinRequestResponse;
 import com.example.backend.dto.EventListResponse;
+import com.example.backend.dto.EventManageMemberResponse;
 import com.example.backend.dto.EventSearchCondition;
 import com.example.backend.dto.EventUpdateRequest;
 import com.example.backend.dto.FlashEventListResponse;
@@ -76,9 +77,10 @@ public class EventController {
 
 	@GetMapping("/{eventId}")
 	public ResponseEntity<ApiResponse<EventDetailResponse>> getEventDetail(
+		@AuthenticationPrincipal User user,
 		@PathVariable Long eventId
 	) {
-		EventDetailResponse response = eventService.getEventDetail(eventId);
+		EventDetailResponse response = eventService.getEventDetail(user, eventId);
 		return ResponseEntity.ok(ApiResponse.success(response));
 	}
 
@@ -131,12 +133,12 @@ public class EventController {
 	}
 
 	// 참여 신청 취소 (login)
-	@DeleteMapping("/join-requests/{requestId}")
+	@DeleteMapping("/{eventId}/join-requests")
 	public ResponseEntity<ApiResponse<Void>> cancelJoinRequest(
 		@AuthenticationPrincipal User user,
-		@PathVariable Long requestId
+		@PathVariable Long eventId
 	) {
-		eventService.cancelJoinRequest(user.getId(), requestId);
+		eventService.cancelJoinRequest(user.getId(), eventId);
 		return ResponseEntity.ok(ApiResponse.success("이벤트 신청이 취소되었습니다."));
 	}
 
@@ -168,5 +170,23 @@ public class EventController {
 		@AuthenticationPrincipal User user) {
 		eventManageService.rejectJoinRequest(eventId, requestId, user.getId());
 		return ApiResponse.success();
+	}
+
+	@GetMapping("{eventId}/manage/members")
+	public ApiResponse<List<EventManageMemberResponse>> getMembers(
+		@PathVariable Long eventId,
+		@AuthenticationPrincipal User user) {
+
+		return ApiResponse.success(eventManageService.getMembers(eventId, user.getId()));
+	}
+
+	@DeleteMapping("/{eventId}/manage/members/{memberId}")
+	public ApiResponse<Void> removeMember(
+		@PathVariable Long eventId,
+		@PathVariable Long memberId,
+		@AuthenticationPrincipal User user) {
+
+		eventManageService.removeMember(eventId, memberId, user.getId());
+		return ApiResponse.success("멤버를 삭제했습니다.");
 	}
 }

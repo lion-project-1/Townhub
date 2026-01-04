@@ -51,7 +51,7 @@ public class EventQueryRepositoryImpl implements EventQueryRepository {
 				location.province,
 				location.city,
 				event.capacity,
-				member.countDistinct()
+				member.id.countDistinct()
 			))
 			.from(event)
 			.join(event.location, location)
@@ -88,7 +88,10 @@ public class EventQueryRepositoryImpl implements EventQueryRepository {
 	}
 
 	@Override
-	public Page<FlashEventListResponse> findFlashEventList(EventSearchCondition condition, Pageable pageable) {
+	public Page<FlashEventListResponse> findFlashEventList(
+		EventSearchCondition condition,
+		Pageable pageable) {
+
 		QEvent event = QEvent.event;
 		QEventMember member = QEventMember.eventMember;
 		QLocation location = QLocation.location;
@@ -107,7 +110,7 @@ public class EventQueryRepositoryImpl implements EventQueryRepository {
 				location.province,
 				location.city,
 				event.capacity,
-				member.countDistinct()
+				member.id.countDistinct()
 			))
 			.from(event)
 			.join(event.location, location)

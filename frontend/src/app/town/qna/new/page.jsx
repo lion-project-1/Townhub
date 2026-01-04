@@ -41,7 +41,8 @@ export default function QnaNewPage() {
           // const token = 0; // 실제 로그인 토큰 사용
           const result = await createQuestion(formData);
           console.log(result); // 등록된 질문 확인
-          router.push(`/town/qna/${result.data}`); // 상세페이지 이동
+          // 글 ID 저장
+          router.push(`/town/qna/${result.data}`);
       } catch (error) {
           console.error(error);
           alert("질문 등록 중 오류가 발생했습니다.");

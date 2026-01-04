@@ -1,47 +1,95 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Calendar, Users, Plus } from 'lucide-react';
 import TodayFlashSection from '@/app/components/TodayFlashSection';
-import { getTodayFlashEvents } from '@/app/mocks/todayFlashEvents';
-
-const MOCK_EVENTS = [
-  {
-    id: 1,
-    title: '동네 장터',
-    date: '2025-01-25',
-    time: '14:00',
-    participants: 23,
-  },
-  {
-    id: 2,
-    title: '환경 정화 활동',
-    date: '2025-01-15',
-    time: '09:00',
-    participants: 18,
-  },
-  {
-    id: 3,
-    title: '주민 체육대회',
-    date: '2025-01-20',
-    time: '13:00',
-    participants: 67,
-  },
-];
+import { getEventCalendar, getFlashEventList } from '@/app/api/events';
+import { useTown } from '@/app/contexts/TownContext';
 
 export default function EventCalendarPage() {
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 0, 1));
-
-  // 오늘의 번개 이벤트 가져오기
-  // [개발용 임시 데이터] 추후 API 연동 시 이 부분을 API 호출로 교체 예정
-  const todayFlashEvents = getTodayFlashEvents();
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [calendarEvents, setCalendarEvents] = useState([]);
+  const [flashEvents, setFlashEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { selectedTown } = useTown();
+  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // 캘린더 이벤트 조회
+  useEffect(() => {
+    if (!selectedTown) return;
+
+    const loadCalendarEvents = async () => {
+      try {
+        setLoading(true);
+
+        // 현재 월의 시작일과 종료일 계산
+        const from = new Date(year, month, 1);
+        const to = new Date(year, month + 1, 0);
+
+        const condition = {
+          from: from.toISOString().split('T')[0],
+          to: to.toISOString().split('T')[0],
+          province: selectedTown.province,
+          city: selectedTown.city,
+        };
+
+        const result = await getEventCalendar(condition, token);
+        setCalendarEvents(result.data || []);
+      } catch (e) {
+        console.error('캘린더 이벤트 조회 실패:', e);
+        setCalendarEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCalendarEvents();
+  }, [year, month, selectedTown, token]);
+
+  // 번개 이벤트 목록 조회
+  useEffect(() => {
+    if (!selectedTown) return;
+
+    const loadFlashEvents = async () => {
+      try {
+        const condition = {
+          province: selectedTown.province,
+          city: selectedTown.city,
+        };
+
+        const result = await getFlashEventList(condition, 0, token);
+        
+        const formattedEvents = (result.data?.content || []).map((event) => ({
+          id: event.eventId,
+          title: event.title,
+          category: 'FLASH',
+          startAt: event.startAt,
+          place: event.eventPlace,
+          capacity: event.capacity || 0,
+          activeMemberCount: event.memberCount || 0,
+          description: event.description,
+          createdAt: event.createdAt,
+          status: event.status || null,
+          // 하위 호환성을 위해 유지
+          eventStatus: event.status || event.eventStatus || null,
+        }));
+
+        setFlashEvents(formattedEvents);
+      } catch (e) {
+        console.error('번개 이벤트 목록 조회 실패:', e);
+        setFlashEvents([]);
+      }
+    };
+
+    loadFlashEvents();
+  }, [selectedTown, token]);
 
   const prevMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
@@ -53,7 +101,25 @@ export default function EventCalendarPage() {
 
   const getEventsForDate = (day) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return MOCK_EVENTS.filter((event) => event.date === dateStr);
+    
+    // 일반 이벤트 필터링
+    const regularEvents = calendarEvents.filter((event) => {
+      if (!event.startAt) return false;
+      const eventDate = new Date(event.startAt);
+      const eventDateStr = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
+      return eventDateStr === dateStr;
+    });
+    
+    // 번개 이벤트 필터링
+    const flashEventsForDate = flashEvents.filter((event) => {
+      if (!event.startAt) return false;
+      const eventDate = new Date(event.startAt);
+      const eventDateStr = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
+      return eventDateStr === dateStr;
+    });
+    
+    // 일반 이벤트와 번개 이벤트 합치기
+    return [...regularEvents, ...flashEventsForDate];
   };
 
   const monthName = currentDate.toLocaleString('ko-KR', { month: 'long' });
@@ -85,7 +151,7 @@ export default function EventCalendarPage() {
         </div>
 
         {/* 오늘의 번개 섹션 */}
-        <TodayFlashSection events={todayFlashEvents} />
+        <TodayFlashSection events={flashEvents} />
 
         {/* Calendar */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -151,15 +217,22 @@ export default function EventCalendarPage() {
                     {day}
                   </div>
                   <div className="space-y-1">
-                    {events.map((event) => (
-                      <Link
-                        key={event.id}
-                        href={`/town/events/${event.id}`}
-                        className="block text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded truncate hover:bg-green-200"
-                      >
-                        {event.title}
-                      </Link>
-                    ))}
+                    {events.map((event) => {
+                      const isFlash = event.category === 'FLASH';
+                      return (
+                        <Link
+                          key={event.id}
+                          href={`/town/events/${event.id}`}
+                          className={`block text-xs px-1.5 py-0.5 rounded truncate ${
+                            isFlash
+                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                              : 'bg-green-100 text-green-800 hover:bg-green-200'
+                          }`}
+                        >
+                          {event.title}
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -170,39 +243,86 @@ export default function EventCalendarPage() {
         {/* Upcoming Events List */}
         <div className="mt-8 bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="mb-6 text-gray-900">다가오는 이벤트</h2>
-          <div className="space-y-4">
-            {MOCK_EVENTS.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(
-              (event) => (
-                <Link
-                  key={event.id}
-                  href={`/town/events/${event.id}`}
-                  className="block p-4 rounded-lg border border-gray-200 hover:border-green-500 hover:bg-green-50 transition-colors"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex flex-col items-center justify-center text-white flex-shrink-0">
-                      <div className="text-xl">{new Date(event.date).getDate()}</div>
-                      <div className="text-xs">
-                        {new Date(event.date).toLocaleString('ko-KR', { month: 'short' })}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-gray-900 mb-2">{event.title}</h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>{event.date}</span>
+          {loading && (
+            <div className="text-center py-12 text-gray-500">로딩 중...</div>
+          )}
+          {!loading && (() => {
+            // 오늘 날짜 구하기 (시간 제외)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            // 오늘 날짜에 시작하는 일반 이벤트만 필터링 (번개 제외)
+            const todayEvents = calendarEvents.filter((event) => {
+              if (!event.startAt) return false;
+              // 번개 이벤트 제외
+              if (event.category === 'FLASH') return false;
+              
+              const eventDate = new Date(event.startAt);
+              eventDate.setHours(0, 0, 0, 0);
+              
+              // 오늘 날짜에 시작하는 이벤트만
+              return eventDate.getTime() >= today.getTime() && eventDate.getTime() < tomorrow.getTime();
+            }).sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+
+            return (
+              <div className="space-y-4">
+                {todayEvents.length > 0 ? (
+                  todayEvents.map((event) => {
+                    const eventDate = new Date(event.startAt);
+                    const isFlash = event.category === 'FLASH';
+                    return (
+                      <Link
+                        key={event.id}
+                        href={`/town/events/${event.id}`}
+                        className={`block p-4 rounded-lg border transition-colors ${
+                          isFlash
+                            ? 'border-yellow-200 hover:border-yellow-500 hover:bg-yellow-50'
+                            : 'border-gray-200 hover:border-green-500 hover:bg-green-50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div
+                            className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center text-white flex-shrink-0 ${
+                              isFlash
+                                ? 'bg-gradient-to-br from-yellow-400 to-orange-500'
+                                : 'bg-gradient-to-br from-green-500 to-green-600'
+                            }`}
+                          >
+                            <div className="text-xl">{eventDate.getDate()}</div>
+                            <div className="text-xs">
+                              {eventDate.toLocaleString('ko-KR', { month: 'short' })}
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="text-gray-900">{event.title}</h3>
+                              {isFlash && (
+                                <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs">
+                                  번개
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                <span>{eventDate.toISOString().split('T')[0]}</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          <span>{event.participants}명 참여</span>
-                        </div>
-                      </div>
-                    </div>
+                      </Link>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    다가오는 이벤트가 없습니다.
                   </div>
-                </Link>
-              )
-            )}
-          </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

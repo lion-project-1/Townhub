@@ -68,22 +68,27 @@ public class EventService {
 		return eventRepository.findEventListForCalendar(condition);
 	}
 
-	public EventDetailResponse getEventDetail(Long eventId) {
+	public EventDetailResponse getEventDetail(User user, Long eventId) {
 		Event event = getEvent(eventId);
 
-		// 참여자(MEMBER)만 응답
 		List<EventMemberResponse> members = event.getMembers().stream()
-			.filter(m -> m.getRole() == ParticipantRole.MEMBER)
 			.map(EventMapper::toEventMemberResponse)
 			.toList();
 
-		long memberCount = event.getMembers().stream()
-			.filter(m -> m.getRole() == ParticipantRole.MEMBER)
-			.count();
+		long memberCount = members.size();
 
 		boolean isEnded = calculateIsEnded(event.getStartAt());
 
-		return toEventDetailResponse(event, members, memberCount, isEnded);
+		JoinRequestStatus joinRequestStatus = null;
+
+		if (user != null) {
+			joinRequestStatus = eventJoinRequestRepository
+				.findByEventAndUser(event, user)
+				.map(EventJoinRequest::getStatus)
+				.orElse(null); // 또는 JoinRequestStatus.NONE
+		}
+
+		return toEventDetailResponse(event, members, memberCount, isEnded, joinRequestStatus);
 	}
 
 	@Transactional
@@ -169,18 +174,15 @@ public class EventService {
 	}
 
 	@Transactional
-	public void cancelJoinRequest(Long userId, Long requestId) {
-		// 신청 내역 없으면 취소 불가
-		EventJoinRequest request = eventJoinRequestRepository.findById(requestId)
+	public void cancelJoinRequest(Long userId, Long eventId) {
+
+		// event + user 기준으로 신청 내역 조회
+		EventJoinRequest request = eventJoinRequestRepository
+			.findByEvent_IdAndUser_Id(eventId, userId)
 			.orElseThrow(() -> new CustomException(ErrorCode.EVENT_JOIN_REQUEST_NOT_FOUND));
 
-		// 본인 아니면 취소 불가
-		if (!request.getUser().getId().equals(userId)) {
-			throw new CustomException(ErrorCode.EVENT_JOIN_REQUEST_FORBIDDEN);
-		}
-
 		// 대기 상태 아니면 취소 불가
-		if (!request.getStatus().equals(JoinRequestStatus.PENDING)) {
+		if (request.getStatus() != JoinRequestStatus.PENDING) {
 			throw new CustomException(ErrorCode.EVENT_JOIN_REQUEST_NOT_PENDING);
 		}
 

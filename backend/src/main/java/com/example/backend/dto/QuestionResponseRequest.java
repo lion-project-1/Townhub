@@ -22,11 +22,8 @@ public class QuestionResponseRequest {
     private String content;
     private Long authorId;
     private String writer;
-    QuestionCategory category;
+    private QuestionCategory category;
     private int views;
-    private boolean resolved;
-
-
     private LocalDateTime createdAt;
 
 
@@ -38,10 +35,7 @@ public class QuestionResponseRequest {
         this.authorId = question.getId();
         this.writer = question.getUser().getNickname();
         this.category = question.getQuestionCategory();
-        // 도메인에 없으므로 임시 값
-        this.views = 0;          // 또는 랜덤/고정값
-        this.resolved = false;
-
+        this.views = question.getViewCount();          // 또는 랜덤/고정값
         this.createdAt = question.getCreatedAt();
 
     }
