@@ -176,18 +176,15 @@ public class EventService {
 	}
 
 	@Transactional
-	public void cancelJoinRequest(Long userId, Long requestId) {
-		// 신청 내역 없으면 취소 불가
-		EventJoinRequest request = eventJoinRequestRepository.findById(requestId)
+	public void cancelJoinRequest(Long userId, Long eventId) {
+
+		// event + user 기준으로 신청 내역 조회
+		EventJoinRequest request = eventJoinRequestRepository
+			.findByEvent_IdAndUser_Id(eventId, userId)
 			.orElseThrow(() -> new CustomException(ErrorCode.EVENT_JOIN_REQUEST_NOT_FOUND));
 
-		// 본인 아니면 취소 불가
-		if (!request.getUser().getId().equals(userId)) {
-			throw new CustomException(ErrorCode.EVENT_JOIN_REQUEST_FORBIDDEN);
-		}
-
 		// 대기 상태 아니면 취소 불가
-		if (!request.getStatus().equals(JoinRequestStatus.PENDING)) {
+		if (request.getStatus() != JoinRequestStatus.PENDING) {
 			throw new CustomException(ErrorCode.EVENT_JOIN_REQUEST_NOT_PENDING);
 		}
 
