@@ -74,6 +74,8 @@ public enum ErrorCode {
 	EVENT_JOIN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "EVENT_010", "참여 신청 내역을 찾을 수 없습니다."),
 	EVENT_JOIN_REQUEST_FORBIDDEN(HttpStatus.FORBIDDEN, "EVENT_011", "본인의 참여 신청만 취소할 수 있습니다."),
 	EVENT_JOIN_REQUEST_NOT_PENDING(HttpStatus.BAD_REQUEST, "EVENT_012", "대기 상태의 참여 신청만 취소할 수 있습니다."),
+	EVENT_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "EVENT_013", "해당 멤버를 이벤트에서 조회할 수 없습니다."),
+	EVENT_HOST_CANNOT_BE_REMOVED(HttpStatus.BAD_REQUEST, "EVENT_014", "방장은 삭제할 수 없습니다."),
 
 	;
 

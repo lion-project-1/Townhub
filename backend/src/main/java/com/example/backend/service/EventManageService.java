@@ -9,6 +9,7 @@ import com.example.backend.domain.Event;
 import com.example.backend.domain.EventJoinRequest;
 import com.example.backend.domain.EventMember;
 import com.example.backend.dto.EventJoinRequestResponse;
+import com.example.backend.dto.EventManageMemberResponse;
 import com.example.backend.enums.JoinRequestStatus;
 import com.example.backend.enums.ParticipantRole;
 import com.example.backend.global.exception.custom.CustomException;
@@ -77,6 +78,40 @@ public class EventManageService {
 		checkStatus(request);
 
 		request.reject();
+	}
+
+	public List<EventManageMemberResponse> getMembers(Long eventId, Long userId) {
+		Event event = getEvent(eventId);
+		validateHost(eventId, userId);
+		List<EventMember> members = eventMemberRepository.findAllByEvent(event);
+		return members.stream()
+			.map(member -> EventManageMemberResponse.builder()
+				.eventMemberId(member.getId())
+				.nickname(member.getUser().getNickname()) // 또는 getName()
+				.role(member.getRole())
+				.joinedAt(member.getCreatedAt())
+				.build()
+			)
+			.toList();
+	}
+
+	@Transactional
+	public void removeMember(Long eventId, Long memberId, Long hostUserId) {
+
+		Event event = getEvent(eventId);
+
+		validateHost(eventId, hostUserId);
+
+		EventMember member = eventMemberRepository
+			.findByIdAndEvent(memberId, event)
+			.orElseThrow(() ->
+				new CustomException(ErrorCode.EVENT_MEMBER_NOT_FOUND));
+
+		if (member.getRole() == ParticipantRole.HOST) {
+			throw new CustomException(ErrorCode.EVENT_HOST_CANNOT_BE_REMOVED);
+		}
+
+		eventMemberRepository.delete(member);
 	}
 
 	private void checkStatus(EventJoinRequest request) {
