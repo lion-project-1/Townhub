@@ -23,7 +23,6 @@ import {
   cancelJoinRequest,
   deleteEvent,
 } from "@/app/api/events";
-import { getEventCtaState } from "@/app/utils/eventStatus";
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -31,7 +30,6 @@ export default function EventDetailPage() {
   const router = useRouter();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [joinRequestId, setJoinRequestId] = useState(null);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinMessage, setJoinMessage] = useState("");
   const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
@@ -70,6 +68,7 @@ export default function EventDetailPage() {
           description: eventData.description,
           organizer: eventData.hostNickname,
           organizerId: eventData.hostUserId,
+          hostUserId: eventData.hostUserId,
           createdAt: eventData.createdAt,
           startAt: eventData.startAt,
           members: eventData.members || [],
@@ -78,16 +77,11 @@ export default function EventDetailPage() {
           // 하위 호환성을 위해 유지
           isEnded: eventData.ended || eventData.isEnded || false,
           eventStatus: eventData.status || eventData.eventStatus || null,
+          joinRequestStatus: eventData.joinRequestStatus || null,
+          joinRequestId: eventData.joinRequestId || null,
         };
 
         setEvent(formattedEvent);
-
-        // 사용자가 이미 참여 신청했는지 확인
-        // 참여 신청 ID는 나중에 별도 API로 조회하거나, members에서 확인
-        const isMember = eventData.members?.some(
-          (m) => m.userId === user?.id
-        );
-        // 참여 신청 ID는 별도로 관리 필요 (현재는 간단히 처리)
       } catch (e) {
         console.error("이벤트 상세 조회 실패:", e);
         router.push("/town/events");
@@ -107,47 +101,67 @@ export default function EventDetailPage() {
     );
   }
 
-  const isOrganizer = user?.id === event.organizerId;
-  const isJoined = event.members?.some((m) => m.userId === user?.id) || false;
+  // 호스트 여부 확인 (hostUserId 우선, 하위 호환을 위해 organizerId도 확인)
+  const isHost = user?.id === event.hostUserId || user?.id === event.organizerId;
   
-  // 이벤트 상태에 따른 CTA 상태 계산
-  const ctaState = getEventCtaState(
-    event.status || event.eventStatus,
-    event.maxParticipants,
-    event.participants,
-    event.ended || event.isEnded
-  );
-  
-  // 이벤트 상태 확인: CANCELED 또는 CLOSED면 종료된 것으로 처리
+  // 이벤트 상태 확인
   const status = event.status || event.eventStatus;
-  const isCanceledOrClosed = status === 'CANCELED' || status === 'CLOSED' || event.ended || event.isEnded;
-  const isEventEnded = isCanceledOrClosed || ctaState.disabled;
+  const isDisabledEvent =
+    status === "CANCELED" ||
+    status === "CLOSED" ||
+    event.ended ||
+    event.isEnded;
+  
+  // joinRequestStatus 가져오기
+  const joinRequestStatus = event.joinRequestStatus;
 
-  const handleJoinToggle = () => {
-    // 클릭 가드: disabled 조건이면 요청이 나가지 않도록 (필수)
-    if (ctaState.disabled) {
-      return;
-    }
-    
-    if (isJoined) {
-      // 참여 취소
-      // 참여 신청 ID가 필요하므로, 일단 간단히 처리
-      // 실제로는 참여 신청 목록에서 requestId를 찾아야 함
-      if (!joinRequestId) {
-        alert("참여 신청 정보를 찾을 수 없습니다. 페이지를 새로고침해주세요.");
-        return;
-      }
-      
-      handleCancelJoin();
-    } else {
-      // 참여 신청 모달 표시
-      setShowJoinModal(true);
+  // 이벤트 상세 재조회 함수
+  const refetchEvent = async () => {
+    try {
+      const result = await getEventDetail(params.id, token);
+      const eventData = result.data;
+
+      const formattedEvent = {
+        id: eventData.eventId,
+        title: eventData.title,
+        category: eventData.category,
+        date: eventData.startAt
+          ? new Date(eventData.startAt).toISOString().split("T")[0]
+          : "",
+        time: eventData.startAt
+          ? new Date(eventData.startAt).toLocaleTimeString("ko-KR", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            })
+          : "",
+        location: eventData.eventPlace,
+        participants: eventData.memberCount || 0,
+        maxParticipants: eventData.capacity || 0,
+        description: eventData.description,
+        organizer: eventData.hostNickname,
+        organizerId: eventData.hostUserId,
+        hostUserId: eventData.hostUserId,
+        createdAt: eventData.createdAt,
+        startAt: eventData.startAt,
+        members: eventData.members || [],
+        status: eventData.status || null,
+        ended: eventData.ended || false,
+        isEnded: eventData.ended || eventData.isEnded || false,
+        eventStatus: eventData.status || eventData.eventStatus || null,
+        joinRequestStatus: eventData.joinRequestStatus || null,
+        joinRequestId: eventData.joinRequestId || null,
+      };
+
+      setEvent(formattedEvent);
+    } catch (e) {
+      console.error("이벤트 재조회 실패:", e);
     }
   };
 
   const handleJoinSubmit = async () => {
     try {
-      const result = await requestJoinEvent(
+      await requestJoinEvent(
         params.id,
         { message: joinMessage },
         token
@@ -156,7 +170,8 @@ export default function EventDetailPage() {
       alert("이벤트 참여 신청이 완료되었습니다.");
       setShowJoinModal(false);
       setJoinMessage("");
-      router.refresh();
+      // 이벤트 상세 API 재요청
+      await refetchEvent();
     } catch (e) {
       console.error("참여 신청 실패:", e);
       const errorCode = e?.response?.data?.code;
@@ -169,11 +184,16 @@ export default function EventDetailPage() {
   };
 
   const handleCancelJoin = async () => {
+    // confirm 확인
+    if (!confirm("참여 신청을 취소하시겠습니까?")) {
+      return;
+    }
+
     try {
-      await cancelJoinRequest(joinRequestId, token);
+      await cancelJoinRequest(params.id, token);
       alert("이벤트 참여 신청이 취소되었습니다.");
-      setJoinRequestId(null);
-      router.refresh();
+      // 이벤트 상세 API 재요청
+      await refetchEvent();
     } catch (e) {
       console.error("참여 취소 실패:", e);
       const errorCode = e?.response?.data?.code;
@@ -184,6 +204,53 @@ export default function EventDetailPage() {
       }
     }
   };
+
+  // 참여 버튼 상태 계산
+  const getJoinButtonState = () => {
+    // 호스트는 참여 버튼 표시 안 함
+    if (isHost) {
+      return null;
+    }
+    
+    // 종료/취소/마감 이벤트는 비활성화
+    if (isDisabledEvent) {
+      return {
+        label: "종료된 이벤트",
+        disabled: true,
+        onClick: null,
+      };
+    }
+    
+    // joinRequestStatus에 따른 분기
+    if (joinRequestStatus === "APPROVED") {
+      return {
+        label: "참여 예정",
+        disabled: true,
+        onClick: null,
+      };
+    } else if (joinRequestStatus === "PENDING") {
+      return {
+        label: "신청 취소",
+        disabled: false,
+        onClick: handleCancelJoin,
+      };
+    } else if (joinRequestStatus === "REJECTED") {
+      return {
+        label: "신청 거절됨",
+        disabled: true,
+        onClick: null,
+      };
+    } else {
+      // null 또는 undefined - 신청 이력 없음
+      return {
+        label: "참여하기",
+        disabled: false,
+        onClick: () => setShowJoinModal(true),
+      };
+    }
+  };
+
+  const joinButtonState = getJoinButtonState();
 
   const handleDelete = async () => {
     if (!confirm("이 이벤트를 삭제하시겠습니까?")) {
@@ -213,15 +280,13 @@ export default function EventDetailPage() {
         {/* Main Content */}
         <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6">
           {/* 종료된 이벤트 안내 */}
-          {isEventEnded && (
+          {isDisabledEvent && (
             <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-yellow-800">
                 {status === 'CANCELED' 
                   ? '취소된 이벤트입니다.' 
                   : status === 'CLOSED' || event.ended || event.isEnded
                   ? '종료된 이벤트입니다.'
-                  : ctaState.statusBadge === '마감'
-                  ? '마감된 이벤트입니다.'
                   : '종료된 이벤트입니다.'}
               </p>
             </div>
@@ -253,7 +318,7 @@ export default function EventDetailPage() {
             </div>
 
             <div className="flex gap-2">
-              {isOrganizer ? (
+              {isHost ? (
                 <>
                   <Link
                     href={`/town/events/${params.id}/manage`}
@@ -277,33 +342,26 @@ export default function EventDetailPage() {
                     삭제
                   </button>
                 </>
-              ) : (
+              ) : joinButtonState ? (
                 <button
-                  onClick={handleJoinToggle}
-                  disabled={ctaState.disabled}
+                  onClick={joinButtonState.onClick || undefined}
+                  disabled={joinButtonState.disabled}
                   className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-                    ctaState.disabled
+                    joinButtonState.disabled
                       ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                      : isJoined
+                      : joinRequestStatus === "PENDING"
                       ? "border border-gray-300 hover:bg-gray-50"
                       : "bg-green-600 text-white hover:bg-green-700"
                   }`}
                 >
-                  {ctaState.disabled ? (
-                    ctaState.label
-                  ) : isJoined ? (
-                    <>
-                      <UserMinus className="w-4 h-4" />
-                      참여 취소
-                    </>
+                  {joinRequestStatus === "PENDING" ? (
+                    <UserMinus className="w-4 h-4" />
                   ) : (
-                    <>
-                      <UserPlus className="w-4 h-4" />
-                      참여하기
-                    </>
+                    <UserPlus className="w-4 h-4" />
                   )}
+                  {joinButtonState.label}
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
 

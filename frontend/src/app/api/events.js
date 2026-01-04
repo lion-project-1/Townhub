@@ -187,11 +187,11 @@ export async function requestJoinEvent(eventId, request, token) {
 
 /**
  * 이벤트 참여 신청 취소
- * @param {number|string} requestId - 참여 신청 ID
+ * @param {number|string} eventId - 이벤트 ID
  * @param {string} token - 인증 토큰
  */
-export async function cancelJoinRequest(requestId, token) {
-  const res = await fetch(`${BASE_URL}/join-requests/${requestId}`, {
+export async function cancelJoinRequest(eventId, token) {
+  const res = await fetch(`${BASE_URL}/${eventId}/join-requests`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
