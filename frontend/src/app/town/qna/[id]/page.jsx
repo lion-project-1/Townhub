@@ -14,8 +14,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { deleteQuestion } from "@/app/api/questions";
-import { getQuestion } from "@/app/api/questions"
+import { getQuestionData, incrementQuestionViews, deleteQuestion } from "@/app/api/questions";
+
+
+
 
 
 const CATEGORIES = [
@@ -29,8 +31,6 @@ const CATEGORIES = [
 ];
 
 
-import { getAnswers, createAnswer, updateAnswer, deleteAnswer, acceptAnswer, unacceptAnswer } from "@/app/api/answers";
-
 // 날짜 포맷팅 함수: ISO 8601 형식을 YYYY-MM-DD HH:mm 형식으로 변환
 import {
   getAnswers,
@@ -40,6 +40,7 @@ import {
   acceptAnswer,
   unacceptAnswer,
 } from "@/app/api/answers";
+
 
 // 날짜 포맷팅 함수
 function formatDateTime(dateString) {
@@ -62,8 +63,10 @@ function formatDateTime(dateString) {
 
 export default function QnaDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const router = useRouter();
+
 
   const [answerText, setAnswerText] = useState("");
   const [answers, setAnswers] = useState([]);
@@ -75,59 +78,11 @@ export default function QnaDetailPage() {
 
   const isDevMode = process.env.NEXT_PUBLIC_DEV === "true";
 
-
-    const [question, setQuestion] = useState(null);
-
-
-    useEffect(() => {
-        async function fetchQuestion() {
-            try {
-                const data = await getQuestion(params.id);
-                setQuestion(data);
-            } catch (e) {
-                console.error(e);
-            }
-        }
-        fetchQuestion();
-    }, [params.id]);
+  const [question, setQuestion] = useState(null);
 
 
 
-    if (!question) {
-        return <div>로딩중...</div>;
-    }
 
-
-    const categoryLabel =
-        CATEGORIES.find(c => c.value === question.category)?.label
-        ?? question.category;
-
-    const formattedDate = question.createdAt.replace("T", " ");
-
-    const answers = [
-    {
-      id: 1,
-      content:
-        '중앙시장 근처에 있는 "전통한식" 강추합니다! 룸도 있고 주차장도 넓어요. 음식도 정말 맛있고 가격도 합리적입니다.',
-      author: "이영희",
-      authorId: "3",
-      likes: 8,
-      isAccepted: true,
-      createdAt: "2025-01-22 10:30",
-    },
-    {
-      id: 2,
-      content:
-        '공원 앞 "우리집밥상"도 괜찮아요. 분위기도 좋고 음식도 깔끔합니다.',
-      author: "박철수",
-      authorId: "4",
-      likes: 3,
-      isAccepted: false,
-      createdAt: "2025-01-22 11:00",
-    },
-  ];
-
-  const isAuthor = user?.id === question.authorId;
 
   const formatAnswers = (answersData) => {
     return answersData.map((answer) => {
@@ -155,134 +110,218 @@ export default function QnaDetailPage() {
     setAnswers(formatAnswers(answersData));
   };
 
-  useEffect(() => {
-    const fetchAnswers = async () => {
+
+    useEffect(() => {
+        // console.log("useEffect 실행");
+        if (!params.id) return;
+
+        let isMounted = true;
+
+        const fetchData = async () => {
+            try {
+
+                const updatedQuestion = await incrementQuestionViews(params.id);
+                if (isMounted) setQuestion(updatedQuestion);
+
+
+                setIsLoadingAnswers(true);
+                await refreshAnswers();
+            } catch (error) {
+                console.error(error);
+                if (isMounted) setAnswers([]);
+            } finally {
+                if (isMounted) setIsLoadingAnswers(false);
+            }
+        };
+
+        fetchData();
+
+        return () => { isMounted = false; };
+    }, [params.id]);
+
+
+
+    /*useEffect(() 하나로 합침
+
+     useEffect(() => {
+        // 이미 불러왔거나 params.id가 없으면 그냥 리턴
+        if (!params.id || hasFetched) return;
+
+        let isMounted = true; // 마운트 여부 체크
+
+        const fetchQuestion = async () => {
+            try {
+                const data = await getQuestion(params.id);
+                // 컴포넌트가 아직 마운트 되어 있을 때만 상태 변경
+                if (isMounted) {
+                    setQuestion(data);
+                    setHasFetched(true);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchQuestion();
+
+        // cleanup: 컴포넌트 언마운트 시 isMounted를 false로
+        return () => {
+            isMounted = false;
+        };
+  }, [params.id, hasFetched]);
+
+
+    useEffect(() => {
+      const fetchAnswers = async () => {
+        try {
+          setIsLoadingAnswers(true);
+          await refreshAnswers();
+        } catch (error) {
+          console.error("답변 목록 조회 실패:", error);
+          setAnswers([]);
+        } finally {
+          setIsLoadingAnswers(false);
+        }
+      };
+
+      if (params.id) fetchAnswers();
+    }, [params.id]);
+
+     */
+
+    const handleSubmitAnswer = async (e) => {
+      e.preventDefault();
+      if (!answerText.trim() || isSubmittingAnswer) return;
+
+      const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
+
       try {
-        setIsLoadingAnswers(true);
+        setIsSubmittingAnswer(true);
+        await createAnswer(params.id, answerText.trim(), token);
+        alert("답변이 등록되었습니다!");
+        setAnswerText("");
         await refreshAnswers();
       } catch (error) {
-        console.error("답변 목록 조회 실패:", error);
-        setAnswers([]);
+        console.error("답변 등록 실패:", error);
+        alert("답변 등록에 실패했습니다.");
       } finally {
-        setIsLoadingAnswers(false);
+        setIsSubmittingAnswer(false);
       }
     };
 
-    if (params.id) fetchAnswers();
-  }, [params.id]);
 
-  const handleSubmitAnswer = async (e) => {
-    e.preventDefault();
-    if (!answerText.trim() || isSubmittingAnswer) return;
 
-    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
-    try {
-      setIsSubmittingAnswer(true);
-      await createAnswer(params.id, answerText.trim(), token);
-      alert("답변이 등록되었습니다!");
-      setAnswerText("");
-      await refreshAnswers();
-    } catch (error) {
-      console.error("답변 등록 실패:", error);
-      alert("답변 등록에 실패했습니다.");
-    } finally {
-      setIsSubmittingAnswer(false);
-    }
-  };
+      // 질문
 
-  const handleDelete = async () => {
-    if (!confirm("정말로 이 질문을 삭제하시겠습니까?")) return;
 
-    try {
+      if (!question) {
+          return <div>로딩중...</div>;
+      }
+
+
+      const categoryLabel =
+          CATEGORIES.find(c => c.value === question.category)?.label
+          ?? question.category;
+
+      const formattedDate = question.createdAt.replace("T", " ");
+
+
+      const isAuthor = user?.id === question.authorId;
+
+
+      const handleDelete = async () => {
+      if (!confirm("정말로 이 질문을 삭제하시겠습니까?")) return;
+
+      try {
+        const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
+        await deleteQuestion(params.id, token);
+        alert("질문이 삭제되었습니다.");
+        router.push("/town/qna");
+      } catch (error) {
+        alert("질문 삭제에 실패했습니다.");
+      }
+    };
+
+    const handleEditAnswer = (answerId, currentContent) => {
+      setEditingAnswerId(answerId);
+      setEditText(currentContent);
+    };
+
+    const handleCancelEdit = () => {
+      setEditingAnswerId(null);
+      setEditText("");
+    };
+
+    const handleSubmitEdit = async (answerId) => {
+      if (!editText.trim()) return;
+
       const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-      await deleteQuestion(params.id, token);
-      alert("질문이 삭제되었습니다.");
-      router.push("/town/qna");
-    } catch (error) {
-      alert("질문 삭제에 실패했습니다.");
-    }
-  };
 
-  const handleEditAnswer = (answerId, currentContent) => {
-    setEditingAnswerId(answerId);
-    setEditText(currentContent);
-  };
+      try {
+        await updateAnswer(answerId, editText.trim(), token);
+        alert("답변이 수정되었습니다.");
+        handleCancelEdit();
+        await refreshAnswers();
+      } catch (error) {
+        alert("답변 수정에 실패했습니다.");
+      }
+    };
 
-  const handleCancelEdit = () => {
-    setEditingAnswerId(null);
-    setEditText("");
-  };
+    const handleDeleteAnswer = async (answerId) => {
+      if (!confirm("정말로 이 답변을 삭제하시겠습니까?")) return;
 
-  const handleSubmitEdit = async (answerId) => {
-    if (!editText.trim()) return;
+      const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
-    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
+      try {
+        await deleteAnswer(answerId, token);
+        alert("답변이 삭제되었습니다.");
+        await refreshAnswers();
+      } catch (error) {
+        alert("답변 삭제에 실패했습니다.");
+      }
+    };
 
-    try {
-      await updateAnswer(answerId, editText.trim(), token);
-      alert("답변이 수정되었습니다.");
-      handleCancelEdit();
-      await refreshAnswers();
-    } catch (error) {
-      alert("답변 수정에 실패했습니다.");
-    }
-  };
+    const handleAcceptAnswer = async (answerId) => {
+      const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
-  const handleDeleteAnswer = async (answerId) => {
-    if (!confirm("정말로 이 답변을 삭제하시겠습니까?")) return;
+      try {
+        setAcceptingAnswerId(answerId);
+        await acceptAnswer(answerId, token);
+        await refreshAnswers();
+      } catch (error) {
+        alert("답변 채택에 실패했습니다.");
+      } finally {
+        setAcceptingAnswerId(null);
+      }
+    };
 
-    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
+    const handleUnacceptAnswer = async (answerId) => {
+      const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
-    try {
-      await deleteAnswer(answerId, token);
-      alert("답변이 삭제되었습니다.");
-      await refreshAnswers();
-    } catch (error) {
-      alert("답변 삭제에 실패했습니다.");
-    }
-  };
+      try {
+        setAcceptingAnswerId(answerId);
+        await unacceptAnswer(answerId, token);
+        await refreshAnswers();
+      } catch (error) {
+        alert("답변 채택 취소에 실패했습니다.");
+      } finally {
+        setAcceptingAnswerId(null);
+      }
+    };
 
-  const handleAcceptAnswer = async (answerId) => {
-    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Link
+            href="/town/qna"
+            className="inline-flex items-center gap-2 text-blue-600 hover:underline mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            목록으로
+          </Link>
 
-    try {
-      setAcceptingAnswerId(answerId);
-      await acceptAnswer(answerId, token);
-      await refreshAnswers();
-    } catch (error) {
-      alert("답변 채택에 실패했습니다.");
-    } finally {
-      setAcceptingAnswerId(null);
-    }
-  };
-
-  const handleUnacceptAnswer = async (answerId) => {
-    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-
-    try {
-      setAcceptingAnswerId(answerId);
-      await unacceptAnswer(answerId, token);
-      await refreshAnswers();
-    } catch (error) {
-      alert("답변 채택 취소에 실패했습니다.");
-    } finally {
-      setAcceptingAnswerId(null);
-    }
-  };
-
-  return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link
-          href="/town/qna"
-          className="inline-flex items-center gap-2 text-blue-600 hover:underline mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          목록으로
-        </Link>
-
-        {/* Question */}
+          {/* Question */}
         <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3 flex-1">
@@ -460,6 +499,7 @@ export default function QnaDetailPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-8">
             <h2 className="mb-4">답변 작성</h2>
             <form onSubmit={handleSubmitAnswer}>
+
               <textarea
                 value={answerText}
                 onChange={(e) => setAnswerText(e.target.value)}
