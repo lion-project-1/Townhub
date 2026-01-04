@@ -151,7 +151,7 @@ public class EventController {
 	}
 
 	// 수락 (host)
-	@PostMapping("/{eventId}/manage/join-requests/{requestId}/approve")
+	@PatchMapping("/{eventId}/manage/join-requests/{requestId}/approve")
 	public ApiResponse<Void> approve(
 		@PathVariable Long eventId,
 		@PathVariable Long requestId,
@@ -161,7 +161,7 @@ public class EventController {
 	}
 
 	// 거절 (host)
-	@PostMapping("/{eventId}/manage/join-requests/{requestId}/reject")
+	@PatchMapping("/{eventId}/manage/join-requests/{requestId}/reject")
 	public ApiResponse<Void> reject(
 		@PathVariable Long eventId,
 		@PathVariable Long requestId,
