@@ -99,8 +99,8 @@ export default function Navigation() {
         </div>
       </header>
 
-      {/* Navigation for logged in users with town selected */}
-      {selectedTown && (
+      {/* Navigation for logged in users with town selected or user city */}
+      {(selectedTown || (user && user.city)) && (
         <nav className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex gap-1">
