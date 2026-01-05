@@ -40,7 +40,12 @@ public class SecurityConfig {
                                 "/api/locations",
                                 "/api/meetings",
                                 "/api/meetings/**",
-                                "/api/questions/*/answers"
+                                "/api/questions/*/answers",
+                                "/api/events",
+                                "/api/events/flash",
+                                "/api/questions",
+                                "/api/events/*",
+                                "/api/questions/*"
                         ).permitAll()
                         .requestMatchers(
                                 "/api/users/login",
