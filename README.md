@@ -1,5 +1,3 @@
-# TownHub – 동네 기반 커뮤니티 서비스
-
 <div align="center">
   <h1>TownHub</h1>
   <p>지역 기반 커뮤니티 플랫폼</p>
