@@ -57,11 +57,8 @@ public class UserService {
         String encodedPassword = passwordEncoder.encode(request.getPassword());
         Location location = locationRepository.findByProvinceAndCity(
                 request.getProvince(),
-                request.getCity()
-        ).orElseGet(() -> locationRepository.save(Location.builder()
-                .province(request.getProvince())
-                .city(request.getCity())
-                .build()));
+                request.getCity())
+                .orElseThrow(()-> new CustomException(ErrorCode.LOCATION_NOT_FOUND));
 
         User user = request.toEntity(encodedPassword, location);
 

@@ -15,6 +15,7 @@ public class UserMeResponse {
     private Long userId;
     private String email;
     private String nickname;
+    private Long locationId;
     private String province;
     private String city;
 
@@ -24,6 +25,7 @@ public class UserMeResponse {
                 .userId(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
+                .locationId(location != null ? location.getId(): null)
                 .province(location != null ? location.getProvince() : null)
                 .city(location != null ? location.getCity() : null)
                 .build();

@@ -44,8 +44,9 @@ export function AuthProvider({ children }) {
             city: me.city,
           });
 
-          if (me.province && me.city) {
+          if (me.locationId && me.province && me.city) {
             selectTown({
+              id: me.locationId,
               province: me.province,
               city: me.city,
             });
@@ -81,8 +82,9 @@ export function AuthProvider({ children }) {
         city: me.city,
       });
 
-      if (me.province && me.city) {
+      if (me.locationId && me.province && me.city) {
         selectTown({
+          id: me.locationId,
           province: me.province,
           city: me.city,
         });
@@ -136,8 +138,9 @@ export function AuthProvider({ children }) {
         city: me.city,
       });
 
-      if (me.province && me.city) {
+      if (me.locationId && me.province && me.city) {
         selectTown({
+          id: me.locationId,
           province: me.province,
           city: me.city,
         });
@@ -153,8 +156,9 @@ export function AuthProvider({ children }) {
         city: data?.city,
       });
 
-      if (data?.province && data?.city) {
+      if (data?.locationId && data?.province && data?.city) {
         selectTown({
+          id: data.locationId,
           province: data.province,
           city: data.city,
         });
