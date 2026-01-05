@@ -8,7 +8,6 @@ import {
   TrendingUp,
   Clock,
   CheckCircle,
-  ThumbsUp,
   Edit,
   ArrowLeft,
   Trash2,
@@ -71,7 +70,6 @@ const formatAnswers = (answersData) =>
       author: answer.writerNickname || answer.writer || "익명",
       writerId: answer.writerId,
       createdAt: formatDateTime(answer.createdAt),
-      likes: 0,
     };
   });
 
@@ -458,10 +456,6 @@ export default function QnaDetailPage() {
                             )}
                           </>
                         )}
-                        <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">
-                          <ThumbsUp className="w-4 h-4" />
-                          <span className="text-sm">{answer.likes}</span>
-                        </button>
                       </div>
                     </div>
                   </div>
