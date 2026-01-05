@@ -1,0 +1,254 @@
+package com.example.backend.repository;
+
+import com.example.backend.dto.MyEventItemDto;
+import com.querydsl.jpa.JPAExpressions;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
+import com.example.backend.domain.QEvent;
+import com.example.backend.domain.QEventMember;
+import com.example.backend.domain.QLocation;
+import com.example.backend.dto.EventCalendarResponse;
+import com.example.backend.dto.EventCalendarSearchCondition;
+import com.example.backend.dto.EventListResponse;
+import com.example.backend.dto.EventSearchCondition;
+import com.example.backend.dto.FlashEventListResponse;
+import com.example.backend.enums.EventCategory;
+import com.example.backend.enums.EventStatus;
+import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+public class EventQueryRepositoryImpl implements EventQueryRepository {
+
+	private final JPAQueryFactory queryFactory;
+
+	@Override
+	public Page<EventListResponse> findEventList(
+		EventSearchCondition condition,
+		Pageable pageable) {
+
+		QEvent event = QEvent.event;
+		QEventMember member = QEventMember.eventMember;
+		QLocation location = QLocation.location;
+
+		List<EventListResponse> content = queryFactory
+			.select(Projections.constructor(
+				EventListResponse.class,
+				event.id,
+				event.title,
+				event.description,
+				event.category,
+				event.status,
+				event.eventPlace,
+				event.startAt,
+				event.createdAt,
+				location.province,
+				location.city,
+				event.capacity,
+				member.id.countDistinct()
+			))
+			.from(event)
+			.join(event.location, location)
+			.leftJoin(event.members, member)
+			.where(
+				event.category.ne(EventCategory.FLASH),
+				categoryEq(condition.getCategory()),
+				statusEq(condition.getStatus()),
+				keywordContains(condition.getKeyword()),
+				provinceEq(condition.getProvince()),
+				cityEq(condition.getCity())
+			)
+			.groupBy(event.id, location.id)
+			.offset(pageable.getOffset())
+			.limit(pageable.getPageSize())
+			.orderBy(event.createdAt.desc())
+			.fetch();
+
+		Long total = queryFactory
+			.select(event.id.countDistinct())
+			.from(event)
+			.join(event.location, location)
+			.where(
+				event.category.ne(EventCategory.FLASH),
+				categoryEq(condition.getCategory()),
+				statusEq(condition.getStatus()),
+				keywordContains(condition.getKeyword()),
+				provinceEq(condition.getProvince()),
+				cityEq(condition.getCity())
+			)
+			.fetchOne();
+
+		return new PageImpl<>(content, pageable, total != null ? total : 0);
+	}
+
+	@Override
+	public Page<FlashEventListResponse> findFlashEventList(
+		EventSearchCondition condition,
+		Pageable pageable) {
+
+		QEvent event = QEvent.event;
+		QEventMember member = QEventMember.eventMember;
+		QLocation location = QLocation.location;
+		LocalDateTime now = LocalDateTime.now();
+
+		List<FlashEventListResponse> content = queryFactory
+			.select(Projections.constructor(
+				FlashEventListResponse.class,
+				event.id,
+				event.title,
+				event.description,
+				event.status,
+				event.eventPlace,
+				event.startAt,
+				event.createdAt,
+				location.province,
+				location.city,
+				event.capacity,
+				member.id.countDistinct()
+			))
+			.from(event)
+			.join(event.location, location)
+			.leftJoin(event.members, member)
+			.where(
+				event.category.eq(EventCategory.FLASH),
+				event.status.eq(EventStatus.RECRUITING),
+				keywordContains(condition.getKeyword()),
+				provinceEq(condition.getProvince()),
+				cityEq(condition.getCity()),
+				event.startAt.after(now)
+			)
+			.groupBy(event.id, location.id)
+			.offset(pageable.getOffset())
+			.limit(pageable.getPageSize())
+			.orderBy(event.startAt.asc())
+			.fetch();
+
+		Long total = queryFactory
+			.select(event.id.countDistinct())
+			.from(event)
+			.join(event.location, location)
+			.where(
+				event.category.eq(EventCategory.FLASH),
+				event.status.eq(EventStatus.RECRUITING),
+				keywordContains(condition.getKeyword()),
+				provinceEq(condition.getProvince()),
+				cityEq(condition.getCity()),
+				event.startAt.after(now)
+			)
+			.fetchOne();
+
+		return new PageImpl<>(content, pageable, total != null ? total : 0);
+	}
+
+	@Override
+	public List<EventCalendarResponse> findEventListForCalendar(
+		EventCalendarSearchCondition condition
+	) {
+		QEvent event = QEvent.event;
+		QLocation location = QLocation.location;
+
+		LocalDateTime start = condition.getFrom().atStartOfDay();
+		LocalDateTime endExclusive = condition.getTo().plusDays(1).atStartOfDay();
+
+		return queryFactory
+			.select(Projections.constructor(
+				EventCalendarResponse.class,
+				event.id,
+				event.title,
+				event.startAt,
+				event.status
+			))
+			.from(event)
+			.join(event.location, location)
+			.where(
+				event.category.ne(EventCategory.FLASH),
+				// 캘린더에는 RECRUITING / CLOSED만 표시 (CANCELED 제외)
+				event.status.in(EventStatus.RECRUITING, EventStatus.CLOSED),
+				event.startAt.goe(start),
+				event.startAt.lt(endExclusive),
+				provinceEq(condition.getProvince()),
+				cityEq(condition.getCity())
+			)
+			.orderBy(event.startAt.asc())
+			.fetch();
+	}
+
+	private BooleanExpression categoryEq(EventCategory category) {
+		return category != null ? QEvent.event.category.eq(category) : null;
+	}
+
+	private BooleanExpression statusEq(EventStatus status) {
+		return status != null ? QEvent.event.status.eq(status) : null;
+	}
+
+	private BooleanExpression keywordContains(String keyword) {
+		if (keyword == null || keyword.isBlank()) {
+			return null;
+		}
+
+		return QEvent.event.title.containsIgnoreCase(keyword)
+			.or(QEvent.event.description.containsIgnoreCase(keyword));
+	}
+
+	private BooleanExpression provinceEq(String province) {
+		return (province == null || province.isBlank())
+			? null
+			: QLocation.location.province.eq(province);
+	}
+
+	private BooleanExpression cityEq(String city) {
+		return (city == null || city.isBlank())
+			? null
+			: QLocation.location.city.eq(city);
+	}
+
+
+	@Override
+	public List<MyEventItemDto> findMyEvents(
+			Long userId,
+			Long cursor,
+			int size
+	) {
+		QEvent e = QEvent.event;
+		QEventMember em = QEventMember.eventMember;
+		QEventMember em2 = new QEventMember("em2");
+
+		return queryFactory
+				.select(Projections.constructor(
+						MyEventItemDto.class,
+						e.id,
+						e.title,
+						e.status,
+						JPAExpressions
+								.select(em2.count())
+								.from(em2)
+								.where(em2.event.eq(e)),
+						e.capacity,
+						em.createdAt
+				))
+				.from(em)
+				.join(em.event, e)
+				.where(
+						em.user.id.eq(userId),
+						cursorCondition(cursor, e)
+				)
+				.orderBy(e.id.desc())
+				.limit(size + 1)
+				.fetch();
+	}
+
+	private BooleanExpression cursorCondition(Long cursor, QEvent e) {
+		if (cursor == null) {
+			return null;
+		}
+		return e.id.lt(cursor);
+	}
+}

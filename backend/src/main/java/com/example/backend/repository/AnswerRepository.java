@@ -1,0 +1,32 @@
+package com.example.backend.repository;
+
+import com.example.backend.domain.User;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import com.example.backend.domain.Answer;
+
+public interface AnswerRepository extends JpaRepository<Answer, Long> {
+	@Query("""
+			select a
+			from Answer a
+			join fetch a.user
+			where a.question.id = :questionId
+			order by a.isAccepted desc, a.createdAt desc
+		""")
+	List<Answer> findAllByQuestionIdWithUser(Long questionId);
+
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Query("delete from Answer a where a.question.id = :questionId")
+	void deleteByQuestionId(@Param("questionId") Long questionId);
+
+	Optional<Answer> findByQuestionIdAndIsAcceptedTrue(Long questionId);
+
+	int countByUserId(Long userId);
+	void deleteByUser(User user);
+}
