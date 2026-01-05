@@ -1,9 +1,10 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import {MessageCircle, Search, Plus, TrendingUp, Clock, CheckCircle} from 'lucide-react';
-import {getQuestions} from 'src/app/api/questions';
+import { MessageCircle, Search, Plus, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { getQuestions } from '@/app/api/questions';
+import { useAuth } from "@/app/contexts/AuthContext";
 
 const CATEGORIES = [
     {label: "맛집", value: "RESTAURANT"},
@@ -22,6 +23,8 @@ const SORT_OPTIONS = [
 ];
 
 export default function QnaListPage() {
+    const { isAuthenticated } = useAuth();
+
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -86,6 +89,7 @@ export default function QnaListPage() {
 
 
     return (
+        <>
         <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
@@ -94,13 +98,15 @@ export default function QnaListPage() {
                         <h1 className="mb-2 text-gray-900">Q&A</h1>
                         <p className="text-gray-600">이웃들에게 궁금한 것을 물어보세요</p>
                     </div>
-                    <Link
-                        href="/town/qna/new"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                    >
-                        <Plus className="w-5 h-5"/>
-                        질문하기
-                    </Link>
+                    {isAuthenticated && (
+                        <Link
+                            href="/town/qna/new"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                        >
+                            <Plus className="w-5 h-5"/>
+                            질문하기
+                        </Link>
+                    )}
                 </div>
 
                 {/* Search and Filters */}
@@ -181,9 +187,11 @@ export default function QnaListPage() {
                         <div className="text-center py-20">
                             <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4"/>
                             <p className="text-gray-600 mb-4">검색 결과가 없습니다.</p>
-                            <Link href="/town/qna/new" className="text-blue-600 hover:underline">
-                                첫 질문을 남겨보세요
-                            </Link>
+                            {isAuthenticated && (
+                                <Link href="/town/qna/new" className="text-blue-600 hover:underline">
+                                    첫 질문을 남겨보세요
+                                </Link>
+                            )}
                         </div>
                     ) : (pageData.content.map((question) =>(
                         <Link
@@ -274,5 +282,6 @@ export default function QnaListPage() {
 
             </div>
         </div>
+        </>
     );
 }

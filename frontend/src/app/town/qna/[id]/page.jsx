@@ -185,7 +185,7 @@ export default function QnaDetailPage() {
 
   const handleEditAnswer = (answerId, content) => {
     setEditingAnswerId(answerId);
-    setEditText(content);
+    setEditText(content || "");
   };
 
   const handleCancelEdit = () => {

@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save } from 'lucide-react';
-import { createQuestion } from "/src/app/api/questions";
+import { createQuestion } from "@/app/api/questions";
+import { useAuth } from '@/app/contexts/AuthContext';
+import { emitToast } from '@/app/utils/uiEvents';
 
 
 
@@ -21,6 +23,7 @@ const CATEGORIES = [
 
 export default function QnaNewPage() {
   const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
     category: '',
@@ -38,7 +41,13 @@ export default function QnaNewPage() {
       e.preventDefault();
 
       try {
-          // const token = 0; // 실제 로그인 토큰 사용
+          if (isLoading) return;
+          if (!isAuthenticated) {
+              emitToast("질문 작성은 로그인 후 이용할 수 있어요.", "error");
+              router.push("/login");
+              return;
+          }
+
           const result = await createQuestion(formData);
           console.log(result); // 등록된 질문 확인
           // 글 ID 저장
