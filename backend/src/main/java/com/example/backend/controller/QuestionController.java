@@ -6,6 +6,7 @@ import com.example.backend.dto.QuestionCreateRequest;
 import com.example.backend.dto.QuestionResponseRequest;
 
 
+import com.example.backend.dto.QuestionSearchRequest;
 import com.example.backend.dto.QuestionUpdateRequest;
 import com.example.backend.global.response.ApiResponse;
 import com.example.backend.service.QuestionService;
@@ -39,12 +40,10 @@ public class QuestionController {
 
     // 질문 생성
     @PostMapping
-    public ResponseEntity<ApiResponse<Long>> create(@RequestBody QuestionCreateRequest request
-                                                    //@AuthenticationPrincipal CustomUserDetails user
-    ) {
-        Long tmpUserId = 1L;
+    public ResponseEntity<ApiResponse<Long>> create(@RequestBody QuestionCreateRequest request,
+                                                    @AuthenticationPrincipal User user) {
 
-        Long questionId = questionService.createQuestion(tmpUserId, request);
+        Long questionId = questionService.createQuestion(user.getId(), request);
 
         return ResponseEntity.ok(ApiResponse.success(questionId));
     }
@@ -52,14 +51,13 @@ public class QuestionController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<QuestionResponseRequest>>> list(
-            @RequestParam(value = "search", required = false) String search,
-            @RequestParam(value = "category", required = false) String category,
-            @PageableDefault(page = 0, size = 10) Pageable pageable
-    ) {
-        Page<QuestionResponseRequest> questions = questionService.getQuestions(pageable, search, category);
-        return ResponseEntity.ok(ApiResponse.success(questions));
-    }
+            QuestionSearchRequest request,
+            @PageableDefault(page = 0, size = 6) Pageable pageable) {
+        Page<QuestionResponseRequest> result =
+                questionService.getQuestions(request, pageable);
 
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
 
 
 
@@ -74,8 +72,8 @@ public class QuestionController {
 
     @PostMapping("/{id}/views")
     public ResponseEntity<ApiResponse<QuestionResponseRequest>> incrementQuestionViews(
-            @PathVariable Long id
-    ) {
+            @PathVariable Long id) {
+
         QuestionResponseRequest question = questionService.incrementQuestionViews(id);
         return ResponseEntity.ok(ApiResponse.success(question));
     }

@@ -83,33 +83,40 @@ export async function incrementQuestionViews(id) {
 }
 
 // 모든 질문 조회
+
 export async function getQuestions({
   page = 0,
-  size = 10,
-  search = "",
+  size = 6,
+  search = null,
   category = null,
-  sort = "createdAt,desc", // 기본 정렬
-} = {}) {
+  sort = "createdAt,desc",
+  province = null,
+  city = null,
+}) {
+  const API_BASE_URL = getApiBaseUrl();
+
   const params = new URLSearchParams();
   params.append("page", page);
   params.append("size", size);
+  params.append("sort", sort);
+
   if (search) params.append("search", search);
   if (category) params.append("category", category);
-  if (sort) params.append("sort", sort);
+  if (province) params.append("province", province);
+  if (city) params.append("city", city);
 
-  const res = await authFetch(`${BASE_URL}?${params.toString()}`, {
-    method: "GET",
-  });
+  const res = await fetch(
+    `${API_BASE_URL}/api/questions?${params.toString()}`,
+    {
+      method: "GET",
+      credentials: "include",
+    }
+  );
 
-  const body = await safeJson(res);
-  if (!res.ok || body?.success === false) {
-    throw new Error(body?.message || "질문 조회 실패");
+  if (!res.ok) {
+    throw new Error("질문 목록 조회 실패");
   }
 
-  // 프론트에서 바로 사용하기 좋게 content + page 정보만 반환
-  return {
-    content: body?.data?.content || [],
-    number: body?.data?.number ?? 0,
-    totalPages: body?.data?.totalPages ?? 0,
-  };
+  const body = await res.json();
+  return body;
 }

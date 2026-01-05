@@ -110,9 +110,11 @@ export default function QnaDetailPage() {
         setLoading(true);
         setIsLoadingAnswers(true);
 
-        const q = await getQuestionData(params.id);
+        // ✅ 1. 조회수 증가 먼저
+        await incrementQuestionViews(params.id);
 
-        incrementQuestionViews(params.id).catch(console.error);
+        // ✅ 2. 증가된 조회수 포함된 질문 데이터 조회
+        const q = await getQuestionData(params.id);
 
         const a = await getAnswers(params.id);
 

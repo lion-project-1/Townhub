@@ -6,6 +6,7 @@ import com.example.backend.domain.Question;
 import com.example.backend.domain.User;
 import com.example.backend.dto.QuestionCreateRequest;
 import com.example.backend.dto.QuestionResponseRequest;
+import com.example.backend.dto.QuestionSearchRequest;
 import com.example.backend.dto.QuestionUpdateRequest;
 import com.example.backend.enums.QuestionCategory;
 import com.example.backend.global.exception.custom.CustomException;
@@ -57,39 +58,14 @@ public class QuestionService {
 
 
      // 질문 목록 조회
-     public Page<QuestionResponseRequest> getQuestions(Pageable pageable, String search, String category) {
+     public Page<QuestionResponseRequest> getQuestions(
+             QuestionSearchRequest request,
+             Pageable pageable
+     ) {
+         Page<Question> questions =
+                 questionRepository.search(request, pageable);
 
-         Page<Question> questionPage;
-
-         boolean hasSearch = search != null && !search.isBlank();
-         boolean hasCategory = category != null && !category.isBlank();
-
-         QuestionCategory categoryEnum = null;
-         if (hasCategory) {
-             try {
-                 categoryEnum = QuestionCategory.valueOf(category.toUpperCase()); // 프론트에서 소문자 보내도 대응
-             } catch (IllegalArgumentException e) {
-                 // 잘못된 카테고리 값이면 무시하고 전체 조회
-                 categoryEnum = null;
-             }
-         }
-
-         if (!hasSearch && categoryEnum == null) {
-             // 검색 없고 카테고리 없으면 전체
-             questionPage = questionRepository.findAll(pageable);
-         } else if (hasSearch && categoryEnum == null) {
-             // 검색만 있을 때
-             questionPage = questionRepository.findByTitleContainingIgnoreCase(search, pageable);
-         } else if (!hasSearch && categoryEnum != null) {
-             // 카테고리만 있을 때
-             questionPage = questionRepository.findByQuestionCategory(categoryEnum, pageable);
-         } else {
-             // 검색 + 카테고리 둘 다 있을 때
-             questionPage = questionRepository.findByTitleContainingIgnoreCaseAndQuestionCategory(search, categoryEnum, pageable);
-         }
-
-         // 엔티티 → DTO 변환
-         return questionPage.map(QuestionResponseRequest::new);
+         return questions.map(QuestionResponseRequest::new);
      }
 
 
