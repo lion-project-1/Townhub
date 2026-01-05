@@ -504,6 +504,30 @@ export default function MyPage() {
                         </>
                       )}
 
+                      {activeSection === "EVENT" && (
+                        <>
+                          <span className="px-2 py-0.5 rounded bg-green-50 text-green-700 text-xs">
+                            인원 {item.participantCount} / {item.capacity}
+                          </span>
+
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs ${
+                              item.status === "RECRUITING"
+                                ? "bg-blue-50 text-blue-700"
+                                : item.status === "CANCELED"
+                                ? "bg-gray-100 text-gray-500"
+                                : "bg-yellow-50 text-yellow-700"
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+
+                          <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-xs">
+                            {formatDate(item.joinedAt)}
+                          </span>
+                        </>
+                      )}
+
                       {activeSection === "QNA" && (
                         <>
                           <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 text-xs">
@@ -521,6 +545,8 @@ export default function MyPage() {
                         href={
                           activeSection === "MEETING"
                             ? `/town/groups/${item.meetingId}`
+                            : activeSection === "EVENT"
+                            ? `/town/events/${item.eventId}`
                             : `/town/qna/${item.questionId}`
                         }
                         className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"

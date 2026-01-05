@@ -26,5 +26,6 @@ public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Lo
 	void deleteByUser(User user);
 	void deleteByMeeting(Meeting meeting);
 
+	long countByUserId(long userId);
 
 }

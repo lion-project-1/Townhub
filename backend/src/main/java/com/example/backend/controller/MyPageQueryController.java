@@ -2,6 +2,7 @@ package com.example.backend.controller;
 
 import com.example.backend.domain.User;
 import com.example.backend.dto.CursorPageResponse;
+import com.example.backend.dto.MyEventItemDto;
 import com.example.backend.dto.MyMeetingItemDto;
 import com.example.backend.dto.MyQuestionItemDto;
 import com.example.backend.global.response.ApiResponse;
@@ -29,14 +30,14 @@ public class MyPageQueryController {
         return ApiResponse.success(myPageQueryService.getMyMeetings(user.getId(), cursor, size));
     }
 
-    // @GetMapping("/events")
-    // public ApiResponse<CursorPageResponse<MyEventItemDto>> myEvents(
-    //         @AuthenticationPrincipal User user,
-    //         @RequestParam(name = "cursor", required = false) Long cursor,
-    //         @RequestParam(name = "size", defaultValue = "5") int size
-    // ) {
-    //     return ApiResponse.success(myPageQueryService.getMyEvents(user.getId(), cursor, size));
-    // }
+    @GetMapping("/events")
+    public ApiResponse<CursorPageResponse<MyEventItemDto>> myEvents(
+            @AuthenticationPrincipal User user,
+            @RequestParam(name = "cursor", required = false) Long cursor,
+            @RequestParam(name = "size", defaultValue = "5") int size
+    ) {
+        return ApiResponse.success(myPageQueryService.getMyEvents(user.getId(), cursor, size));
+    }
 
 
     @GetMapping("/questions")

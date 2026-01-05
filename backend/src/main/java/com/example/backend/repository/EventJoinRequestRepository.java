@@ -20,4 +20,6 @@ public interface EventJoinRequestRepository extends JpaRepository<EventJoinReque
 	Optional<EventJoinRequest> findByEvent_IdAndUser_Id(Long eventId, Long userId);
 
 	Optional<EventJoinRequest> findByEventAndUser(Event event, User user);
+
+	void deleteByEvent(Event event);
 }

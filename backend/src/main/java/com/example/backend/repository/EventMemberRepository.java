@@ -21,4 +21,8 @@ public interface EventMemberRepository extends JpaRepository<EventMember, Long> 
 	List<EventMember> findAllByEvent(Event event);
 
 	Optional<EventMember> findByIdAndEvent(Long id, Event event);
+
+	long countByUserId(long userId);
+
+	void deleteByEvent(Event event);
 }
