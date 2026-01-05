@@ -53,10 +53,8 @@ public class Meeting extends BaseEntity{
     @Column(nullable = false)
     private String meetingPlace;
 
-    /** 모임 일정 설명 (예: 매주 토요일 9시) */
     @Column(nullable = false)
     private String schedule;
-
 
     @Column(nullable = false)
     private int capacity;
@@ -71,6 +69,10 @@ public class Meeting extends BaseEntity{
 
     @OneToMany(mappedBy = "meeting", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MeetingMember> members = new ArrayList<>();
+
+    @OneToMany(mappedBy = "meeting", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MeetingJoinRequest> joinRequest = new ArrayList<>();
+
 
     public void update(
             String title,

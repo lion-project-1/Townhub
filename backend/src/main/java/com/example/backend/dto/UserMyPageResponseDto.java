@@ -16,7 +16,7 @@ public class UserMyPageResponseDto {
     private String location;
     private LocalDateTime createdAt;
 
-    private int groups;
-    private int events;
-    private int qna;
+    private long groups;
+    private long events;
+    private long qna;
 }

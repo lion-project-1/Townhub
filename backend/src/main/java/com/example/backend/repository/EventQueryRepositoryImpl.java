@@ -1,5 +1,7 @@
 package com.example.backend.repository;
 
+import com.example.backend.dto.MyEventItemDto;
+import com.querydsl.jpa.JPAExpressions;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -206,5 +208,47 @@ public class EventQueryRepositoryImpl implements EventQueryRepository {
 		return (city == null || city.isBlank())
 			? null
 			: QLocation.location.city.eq(city);
+	}
+
+
+	@Override
+	public List<MyEventItemDto> findMyEvents(
+			Long userId,
+			Long cursor,
+			int size
+	) {
+		QEvent e = QEvent.event;
+		QEventMember em = QEventMember.eventMember;
+		QEventMember em2 = new QEventMember("em2");
+
+		return queryFactory
+				.select(Projections.constructor(
+						MyEventItemDto.class,
+						e.id,
+						e.title,
+						e.status,
+						JPAExpressions
+								.select(em2.count())
+								.from(em2)
+								.where(em2.event.eq(e)),
+						e.capacity,
+						em.createdAt
+				))
+				.from(em)
+				.join(em.event, e)
+				.where(
+						em.user.id.eq(userId),
+						cursorCondition(cursor, e)
+				)
+				.orderBy(e.id.desc())
+				.limit(size + 1)
+				.fetch();
+	}
+
+	private BooleanExpression cursorCondition(Long cursor, QEvent e) {
+		if (cursor == null) {
+			return null;
+		}
+		return e.id.lt(cursor);
 	}
 }

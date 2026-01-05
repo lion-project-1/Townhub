@@ -1,7 +1,7 @@
 package com.example.backend.service;
 
+import com.example.backend.domain.Event;
 import com.example.backend.domain.Meeting;
-import com.example.backend.domain.MeetingJoinRequest;
 import com.example.backend.domain.RefreshToken;
 import com.example.backend.domain.Location;
 import com.example.backend.domain.User;
@@ -9,6 +9,9 @@ import com.example.backend.dto.*;
 import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
 import com.example.backend.repository.AnswerRepository;
+import com.example.backend.repository.EventJoinRequestRepository;
+import com.example.backend.repository.EventMemberRepository;
+import com.example.backend.repository.EventRepository;
 import com.example.backend.repository.LocationRepository;
 import com.example.backend.repository.MeetingJoinRequestRepository;
 import com.example.backend.repository.MeetingMemberRepository;
@@ -33,7 +36,9 @@ public class UserService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final LocationRepository locationRepository;
     private final MeetingRepository meetingRepository;
-    // private final EventRepository eventRepository;
+    private final EventRepository eventRepository;
+    private final EventMemberRepository eventMemberRepository;
+    private final EventJoinRequestRepository eventJoinRequestRepository;
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final MeetingMemberRepository meetingMemberRepository;
@@ -168,8 +173,8 @@ public class UserService {
                 .nickname(user.getNickname())
                 .location(location)
                 .createdAt(user.getCreatedAt())
-                .groups(meetingRepository.countByHostId(userId))
-                .events(-1)//eventRepository.countByUserId(userId))
+                .groups(meetingMemberRepository.countByUserId(userId))
+                .events(eventMemberRepository.countByUserId(userId))
                 .qna(questionRepository.countByUserId(userId))
                 .build();
     }
@@ -220,6 +225,20 @@ public class UserService {
 
         meetingRepository.deleteByHost(user);
 
+        List<Event> events = eventRepository.findEventByHost(user);
+
+        for (Event event: events) {
+            eventJoinRequestRepository.deleteByEvent(event);
+            eventMemberRepository.deleteByEvent(event);
+        }
+
+        /**
+         * 이벤트 삭제하기
+         *
+         *
+         *
+         *
+         */
         answerRepository.deleteByUser(user);
         questionRepository.deleteByUser(user);
         meetingJoinRequestRepository.deleteByUser(user);
