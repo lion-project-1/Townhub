@@ -83,7 +83,7 @@ export default function EventDetailPage() {
     const loadEvent = async () => {
       try {
         setLoading(true);
-        const result = await getEventDetail(params.id, token);
+        const result = await getEventDetail(params.id);
         const eventData = result.data;
 
         setEvent(formatEventData(eventData));
@@ -123,7 +123,7 @@ export default function EventDetailPage() {
   // 이벤트 상세 재조회 함수
   const refetchEvent = async () => {
     try {
-      const result = await getEventDetail(params.id, token);
+      const result = await getEventDetail(params.id);
       setEvent(formatEventData(result.data));
     } catch (e) {
       console.error("이벤트 재조회 실패:", e);
@@ -134,8 +134,7 @@ export default function EventDetailPage() {
     try {
       await requestJoinEvent(
         params.id,
-        { message: joinMessage },
-        token
+        { message: joinMessage }
       );
       
       alert("이벤트 참여 신청이 완료되었습니다.");
@@ -161,7 +160,7 @@ export default function EventDetailPage() {
     }
 
     try {
-      await cancelJoinRequest(params.id, token);
+      await cancelJoinRequest(params.id);
       alert("이벤트 참여 신청이 취소되었습니다.");
       // 이벤트 상세 API 재요청
       await refetchEvent();
@@ -229,7 +228,7 @@ export default function EventDetailPage() {
     }
 
     try {
-      await deleteEvent(params.id, token);
+      await deleteEvent(params.id);
       alert("이벤트가 삭제되었습니다.");
       router.push("/town/events");
     } catch (e) {

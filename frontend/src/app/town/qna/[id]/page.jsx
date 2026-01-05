@@ -183,11 +183,58 @@ export default function QnaDetailPage() {
     router.push("/town/qna");
   };
 
+  const handleEditAnswer = (answerId, content) => {
+    setEditingAnswerId(answerId);
+    setEditText(content);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAnswerId(null);
+    setEditText("");
+  };
+
   const handleSubmitEdit = async (answerId) => {
     await updateAnswer(answerId, editText.trim());
     setEditingAnswerId(null);
     setEditText("");
     await refreshAnswers();
+  };
+
+  const handleDeleteAnswer = async (answerId) => {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+    try {
+      await deleteAnswer(answerId);
+      await refreshAnswers();
+    } catch (error) {
+      console.error("답변 삭제 실패:", error);
+      alert("답변 삭제에 실패했습니다.");
+    }
+  };
+
+  const handleAcceptAnswer = async (answerId) => {
+    try {
+      setAcceptingAnswerId(answerId);
+      await acceptAnswer(answerId);
+      await refreshAnswers();
+    } catch (error) {
+      console.error("답변 채택 실패:", error);
+      alert("답변 채택에 실패했습니다.");
+    } finally {
+      setAcceptingAnswerId(null);
+    }
+  };
+
+  const handleUnacceptAnswer = async (answerId) => {
+    try {
+      setAcceptingAnswerId(answerId);
+      await unacceptAnswer(answerId);
+      await refreshAnswers();
+    } catch (error) {
+      console.error("답변 채택 취소 실패:", error);
+      alert("답변 채택 취소에 실패했습니다.");
+    } finally {
+      setAcceptingAnswerId(null);
+    }
   };
 
   return (
@@ -223,7 +270,7 @@ export default function QnaDetailPage() {
                   수정
                 </Link>
                 <button
-                  onClick={handleDelete}
+                  onClick={handleDeleteQuestion}
                   className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />

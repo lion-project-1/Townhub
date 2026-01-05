@@ -165,7 +165,7 @@ export default function EventNewPage() {
         capacity: Number(formData.maxParticipants),
       };
 
-      const result = await createEvent(payload, token);
+      const result = await createEvent(payload);
 
       // 성공 시 상세 페이지로 이동
       // 응답 구조: { success: true, code: "SUCCESS", message: "...", data: { eventId: ..., status: ... } }

@@ -49,7 +49,7 @@ export default function EventManagePage() {
     const loadEvent = async () => {
       try {
         setLoading(true);
-        const result = await getEventDetail(eventId, token);
+        const result = await getEventDetail(eventId);
         const eventData = result.data;
 
         // 호스트 권한 확인
@@ -81,7 +81,7 @@ export default function EventManagePage() {
 
     const loadRequests = async () => {
       try {
-        const result = await getJoinRequests(eventId, token);
+        const result = await getJoinRequests(eventId);
         if (result.success) {
           setRequests(result.data || []);
         } else {
@@ -104,7 +104,7 @@ export default function EventManagePage() {
 
     const loadMembers = async () => {
       try {
-        const result = await getEventManageMembers(eventId, token);
+        const result = await getEventManageMembers(eventId);
         if (result.success && result.data) {
           setMembers(result.data || []);
         } else {
@@ -138,7 +138,7 @@ export default function EventManagePage() {
     }
 
     try {
-      const result = await approveJoinRequest(eventId, requestId, token);
+      const result = await approveJoinRequest(eventId, requestId);
       if (result.success) {
         // 신청 목록에서 제거
         setRequests((prev) => prev.filter((r) => r.requestId !== requestId));
@@ -161,7 +161,7 @@ export default function EventManagePage() {
     }
 
     try {
-      const result = await rejectJoinRequest(eventId, requestId, token);
+      const result = await rejectJoinRequest(eventId, requestId);
       if (result.success) {
         setRequests((prev) => prev.filter((r) => r.requestId !== requestId));
       } else {
@@ -191,7 +191,7 @@ export default function EventManagePage() {
     }
 
     try {
-      const result = await removeEventManageMember(eventId, eventMemberId, token);
+      const result = await removeEventManageMember(eventId, eventMemberId);
       
       if (result.success) {
         alert("멤버를 삭제했습니다.");
@@ -217,10 +217,10 @@ export default function EventManagePage() {
 
   const refreshEvent = async () => {
     try {
-      const result = await getEventDetail(eventId, token);
+      const result = await getEventDetail(eventId);
       setEvent(result.data);
       // 멤버 목록도 API로 다시 조회
-      const membersResult = await getEventManageMembers(eventId, token);
+      const membersResult = await getEventManageMembers(eventId);
       if (membersResult.success && membersResult.data) {
         setMembers(membersResult.data || []);
       }

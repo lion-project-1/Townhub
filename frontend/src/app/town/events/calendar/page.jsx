@@ -40,7 +40,7 @@ export default function EventCalendarPage() {
           city: selectedTown.city,
         };
 
-        const result = await getEventCalendar(condition, token);
+        const result = await getEventCalendar(condition);
         setCalendarEvents(result.data || []);
       } catch (e) {
         console.error('캘린더 이벤트 조회 실패:', e);
@@ -64,7 +64,7 @@ export default function EventCalendarPage() {
           city: selectedTown.city,
         };
 
-        const result = await getFlashEventList(condition, 0, token);
+        const result = await getFlashEventList(condition, 0);
         
         const formattedEvents = (result.data?.content || []).map((event) => ({
           id: event.eventId,
