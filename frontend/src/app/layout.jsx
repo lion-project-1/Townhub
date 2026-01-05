@@ -10,8 +10,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ko">
       <body>
-        <AuthProvider>
-          <TownProvider>
+        {" "}
+        <TownProvider>
+          <AuthProvider>
             <div className="min-h-screen bg-gray-50">
               <Navigation />
               <main>{children}</main>
@@ -24,8 +25,8 @@ export default function RootLayout({ children }) {
                 </div>
               </footer>
             </div>
-          </TownProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </TownProvider>
       </body>
     </html>
   );

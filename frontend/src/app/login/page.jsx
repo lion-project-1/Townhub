@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
 
   const { login } = useAuth();
+
   const { selectedTown, clearTown } = useTown();
   const router = useRouter();
 
@@ -31,9 +32,6 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-
-      // 로그인 성공 시 비로그인에서 선택한 동네 초기화
-      clearTown();
 
       // 로그인 성공 후 이동
       router.replace("/");
