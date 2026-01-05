@@ -71,7 +71,7 @@ export default function EventListPage() {
           city: selectedTown.city,
         };
 
-        const result = await getEventList(condition, 0, token);
+        const result = await getEventList(condition, 0);
         
         // API 응답을 EventCard 형식에 맞게 변환
         const formattedEvents = (result.data?.content || []).map((event) => {
@@ -137,7 +137,7 @@ export default function EventListPage() {
         city: selectedTown.city,
       };
 
-      const result = await getEventList(condition, nextPage, token);
+      const result = await getEventList(condition, nextPage);
       
       const formattedEvents = (result.data?.content || []).map((event) => ({
         id: event.eventId,
@@ -225,7 +225,7 @@ export default function EventListPage() {
         city: selectedTown.city,
       };
 
-      const result = await getFlashEventList(condition, page, token);
+      const result = await getFlashEventList(condition, page);
       
       const content = result.data?.content || [];
       const pageInfo = result.data?.page || {};

@@ -96,7 +96,7 @@ export default function EventEditPage() {
     const loadEvent = async () => {
       try {
         setLoading(true);
-        const result = await getEventDetail(params.id, token);
+        const result = await getEventDetail(params.id);
         const eventData = result.data;
 
         // 주최자 권한 확인
@@ -224,7 +224,7 @@ export default function EventEditPage() {
         capacity: Number(formData.maxParticipants),
       };
 
-      await updateEvent(params.id, payload, token);
+      await updateEvent(params.id, payload);
 
       alert("이벤트가 수정되었습니다.");
       router.push(`/town/events/${params.id}`);
@@ -244,7 +244,7 @@ export default function EventEditPage() {
     }
 
     try {
-      await deleteEvent(params.id, token);
+      await deleteEvent(params.id);
       alert("이벤트가 삭제되었습니다.");
       router.push("/town/events");
     } catch (e) {
