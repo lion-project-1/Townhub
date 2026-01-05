@@ -36,6 +36,12 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // OPTIONS 요청은 인증 없이 허용
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/locations",
+                                "/api/meetings",
+                                "/api/meetings/**",
+                                "/api/questions/*/answers"
+                        ).permitAll()
                         .requestMatchers(
                                 "/api/users/login",
                                 "/api/users/signup",
@@ -43,7 +49,8 @@ public class SecurityConfig {
                                 "/api/users/logout",
                                 "/api/users/check-email",
                                 "/api/users/check-nickname"
-                        ).permitAll()
+                        )
+                        .permitAll()
                         .anyRequest().authenticated()
                 )
 

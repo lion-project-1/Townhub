@@ -98,6 +98,31 @@ public class UserController {
                 .body(ApiResponse.success("로그아웃 완료", null));
     }
 
+    @GetMapping("/mypage")
+    public ResponseEntity<ApiResponse<UserMyPageResponseDto>> getMyPage(
+            @AuthenticationPrincipal User user) {
+
+        UserMyPageResponseDto myInfo = userService.getMyPage(user.getId());
+        return ResponseEntity.ok(ApiResponse.success(myInfo));
+    }
+
+    @PatchMapping("/me")
+    public ApiResponse<Void> updateMe(
+            @AuthenticationPrincipal User user,
+            @RequestBody UserUpdateRequest request) {
+        userService.updateUser(user.getId(), request);
+        return ApiResponse.success("사용자 정보가 수정되었습니다.");
+    }
+
+    @DeleteMapping("/me")
+    public ApiResponse<Void> withdraw(
+            @AuthenticationPrincipal User user,
+            @RequestBody UserWithdrawRequest request) {
+        userService.withdraw(user.getId(), request.getCurrentPassword());
+        return ApiResponse.success("회원 탈퇴가 완료되었습니다.");
+
+    }
+
     @GetMapping("/check-email")
     public ResponseEntity<ApiResponse<DuplicateCheckResponse>> checkEmail(
             @RequestParam("email") String email
@@ -119,5 +144,4 @@ public class UserController {
         UserMeResponse response = userService.me(user.getId());
         return ResponseEntity.ok(ApiResponse.success("내 정보 조회 성공", response));
     }
-
 }

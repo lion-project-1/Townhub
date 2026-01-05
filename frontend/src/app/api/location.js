@@ -1,21 +1,22 @@
 "use client";
 
-import { authFetch } from "@/app/api/authFetch";
-import { getApiBaseUrl } from "@/app/api/authApi";
+import { apiFetch } from "@/app/api/utils/api.js";
 
-const API_BASE_URL = getApiBaseUrl();
-const BASE_URL = `${API_BASE_URL}/api/locations`;
-
+/**
+ * 동네 검색
+ * GET /api/locations?keyword=
+ * @param {string} keyword - 검색 키워드 (2자 이상)
+ * @returns {Promise<Array>} LocationResponse 배열
+ */
 export async function searchTowns(keyword) {
   if (!keyword || keyword.trim().length < 2) return [];
 
-  const res = await authFetch(`${BASE_URL}?keyword=${encodeURIComponent(keyword)}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
+  const apiResponse = await apiFetch(
+    `/api/locations?keyword=${encodeURIComponent(keyword)}`,
+    {
+      method: "GET",
+    }
+  );
 
-  if (!res.ok) throw new Error("동네 검색 실패");
-  return res.json();
+  return apiResponse;
 }
-
-

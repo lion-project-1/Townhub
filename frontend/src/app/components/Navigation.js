@@ -22,7 +22,6 @@ export default function Navigation() {
 
   const handleLogout = () => {
     logout();
-    router.push("/");
   };
 
   const isActive = (path) => {
@@ -89,7 +88,7 @@ export default function Navigation() {
       </header>
 
       {/* Navigation for logged in users with town selected */}
-      {user && selectedTown && (
+      {selectedTown && (
         <nav className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex gap-1">

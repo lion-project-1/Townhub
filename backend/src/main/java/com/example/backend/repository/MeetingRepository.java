@@ -1,7 +1,11 @@
 package com.example.backend.repository;
 
+import com.example.backend.domain.User;
+import com.example.backend.dto.MyMeetingItemDto;
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,4 +21,11 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long>, Meeting
 		+ "left join fetch mm.user "
 		+ "where m.id = :meetingId ")
 	Optional<Meeting> findDetailWithMembersById(@Param("meetingId") Long meetingId);
+
+	int countByHostId(Long userId);
+
+	List<Meeting> findMeetingByHost(User user);
+
+	void deleteByHost(User user);
+
 }

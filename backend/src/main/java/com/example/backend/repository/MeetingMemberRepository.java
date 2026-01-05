@@ -23,5 +23,8 @@ public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Lo
     List<MeetingMember> findAllByMeeting(Meeting meeting);
 
     Optional<MeetingMember> findByIdAndMeeting(Long id, Meeting meeting);
+	void deleteByUser(User user);
+	void deleteByMeeting(Meeting meeting);
+
 
 }

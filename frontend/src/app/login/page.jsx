@@ -1,31 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/contexts/AuthContext";
 import { LogIn } from "lucide-react";
+
+import { useAuth } from "@/app/contexts/AuthContext";
 import { useTown } from "@/app/contexts/TownContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const { login } = useAuth();
   const { selectedTown } = useTown();
   const router = useRouter();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  /* =========================
+     동네 선택 안 됐으면 이동
+  ========================= */
+  useEffect(() => {
+    if (!selectedTown) {
+      router.replace("/town-select");
+    }
+  }, [selectedTown, router]);
+
+  /* =========================
+     로그인 처리
+  ========================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+
     setIsSubmitting(true);
     setError(null);
+
     try {
       await login(email, password);
-      // 로그인 성공 후: 루트로(요청사항). 동네 선택이 되어 있으면 /town으로
-      if (selectedTown) router.replace("/town");
-      else router.replace("/");
+
+      // 로그인 성공 후 이동
+      router.replace(selectedTown ? "/town" : "/");
     } catch (err) {
       setError(err?.message || "로그인에 실패했습니다.");
     } finally {
@@ -33,6 +50,9 @@ export default function LoginPage() {
     }
   };
 
+  /* =========================
+     UI
+  ========================= */
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full">
@@ -43,7 +63,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <h2 className="text-center mb-8 text-gray-900">로그인</h2>
+          <h2 className="text-center mb-8 text-gray-900 text-xl font-semibold">
+            로그인
+          </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -72,7 +94,9 @@ export default function LoginPage() {
               />
             </div>
 
-            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+            {error && (
+              <p className="text-red-500 text-sm text-center">{error}</p>
+            )}
 
             <button
               type="submit"
