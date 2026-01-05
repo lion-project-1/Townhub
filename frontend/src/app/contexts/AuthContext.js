@@ -102,14 +102,29 @@ export function AuthProvider({ children }) {
     setAccessToken(token);
     setAccessTokenState(token);
 
-    setUser({
-      id: Number(data?.userId),
-      email: data?.email,
-      nickname: data?.nickname,
-      name: data?.nickname,
-      province: data?.province,
-      city: data?.city,
-    });
+    // 로그인 성공 후 /me API로 사용자 정보 가져오기
+    const meBody = await meApi(token);
+    const me = meBody?.data;
+    if (me?.userId) {
+      setUser({
+        id: Number(me.userId),
+        email: me.email,
+        nickname: me.nickname,
+        name: me.nickname,
+        province: me.province,
+        city: me.city,
+      });
+    } else {
+      // /me 실패 시 로그인 응답 데이터 사용 (fallback)
+      setUser({
+        id: Number(data?.userId),
+        email: data?.email,
+        nickname: data?.nickname,
+        name: data?.nickname,
+        province: data?.province,
+        city: data?.city,
+      });
+    }
   };
 
   const signup = async (payload) => {

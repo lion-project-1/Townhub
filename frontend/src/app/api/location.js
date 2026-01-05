@@ -20,3 +20,4 @@ export async function searchTowns(keyword) {
 
   return apiResponse;
 }
+

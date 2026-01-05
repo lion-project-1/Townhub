@@ -16,11 +16,12 @@ import { useTown } from "@/app/contexts/TownContext";
 
 export default function Navigation() {
   const { user, logout } = useAuth();
-  const { selectedTown } = useTown();
+  const { selectedTown, clearTown } = useTown();
   const pathname = usePathname();
   const router = useRouter();
 
   const handleLogout = () => {
+    clearTown();
     logout();
   };
 
@@ -40,15 +41,26 @@ export default function Navigation() {
             </Link>
 
             <div className="flex items-center gap-4">
-              {selectedTown && (
-                <Link
-                  href="/town-select"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100"
-                >
-                  <MapPin className="w-4 h-4 text-gray-600" />
-                  <span className="text-gray-700">{selectedTown.city}</span>
-                </Link>
-              )}
+              {(() => {
+                // 비로그인 시: selectedTown.city 표시
+                // 로그인 시: selectedTown.city 우선, 없으면 user.city 표시
+                let displayCity = null;
+                if (selectedTown?.city) {
+                  displayCity = selectedTown.city;
+                } else if (user?.city) {
+                  displayCity = user.city;
+                }
+                
+                return displayCity ? (
+                  <Link
+                    href="/town-select"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100"
+                  >
+                    <MapPin className="w-4 h-4 text-gray-600" />
+                    <span className="text-gray-700">{displayCity}</span>
+                  </Link>
+                ) : null;
+              })()}
 
               {user ? (
                 <div className="flex items-center gap-3">

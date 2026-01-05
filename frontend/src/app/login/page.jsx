@@ -13,20 +13,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
 
   const { login } = useAuth();
-  const { selectedTown } = useTown();
+  const { selectedTown, clearTown } = useTown();
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-
-  /* =========================
-     동네 선택 안 됐으면 이동
-  ========================= */
-  useEffect(() => {
-    if (!selectedTown) {
-      router.replace("/town-select");
-    }
-  }, [selectedTown, router]);
 
   /* =========================
      로그인 처리
@@ -41,8 +32,11 @@ export default function LoginPage() {
     try {
       await login(email, password);
 
+      // 로그인 성공 시 비로그인에서 선택한 동네 초기화
+      clearTown();
+
       // 로그인 성공 후 이동
-      router.replace(selectedTown ? "/town" : "/");
+      router.replace("/");
     } catch (err) {
       setError(err?.message || "로그인에 실패했습니다.");
     } finally {

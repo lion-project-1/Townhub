@@ -183,6 +183,42 @@ export default function QnaDetailPage() {
     router.push("/town/qna");
   };
 
+  const handleEditAnswer = (answerId, content) => {
+    setEditingAnswerId(answerId);
+    setEditText(content || "");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAnswerId(null);
+    setEditText("");
+  };
+
+  const handleDeleteAnswer = async (answerId) => {
+    if (!confirm("이 답변을 삭제하시겠습니까?")) return;
+    await deleteAnswer(answerId);
+    await refreshAnswers();
+  };
+
+  const handleAcceptAnswer = async (answerId) => {
+    try {
+      setAcceptingAnswerId(answerId);
+      await acceptAnswer(answerId);
+      await refreshAnswers();
+    } finally {
+      setAcceptingAnswerId(null);
+    }
+  };
+
+  const handleUnacceptAnswer = async (answerId) => {
+    try {
+      setAcceptingAnswerId(answerId);
+      await unacceptAnswer(answerId);
+      await refreshAnswers();
+    } finally {
+      setAcceptingAnswerId(null);
+    }
+  };
+
   const handleSubmitEdit = async (answerId) => {
     await updateAnswer(answerId, editText.trim());
     setEditingAnswerId(null);
@@ -223,7 +259,7 @@ export default function QnaDetailPage() {
                   수정
                 </Link>
                 <button
-                  onClick={handleDelete}
+                  onClick={handleDeleteQuestion}
                   className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
