@@ -3,15 +3,21 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { loginApi, logoutApi, meApi, signupApi } from "@/app/api/authApi";
-import { clearAccessToken, getAccessToken, setAccessToken } from "@/app/api/tokenStorage";
+import {
+  clearAccessToken,
+  getAccessToken,
+  setAccessToken,
+} from "@/app/api/tokenStorage";
 import { reissueOnce } from "@/app/api/reissueOnce";
 import { emitToast } from "@/app/utils/uiEvents";
+import { useTown } from "@/app/contexts/TownContext";
 
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { selectTown, clearTown } = useTown();
 
   const [user, setUser] = useState(null);
   const [accessTokenState, setAccessTokenState] = useState(null);
@@ -37,6 +43,13 @@ export function AuthProvider({ children }) {
             province: me.province,
             city: me.city,
           });
+
+          if (me.province && me.city) {
+            selectTown({
+              province: me.province,
+              city: me.city,
+            });
+          }
           return;
         }
       }
@@ -67,6 +80,13 @@ export function AuthProvider({ children }) {
         province: me.province,
         city: me.city,
       });
+
+      if (me.province && me.city) {
+        selectTown({
+          province: me.province,
+          city: me.city,
+        });
+      }
     };
 
     const syncToken = () => setAccessTokenState(getAccessToken());
@@ -105,6 +125,7 @@ export function AuthProvider({ children }) {
     // 로그인 성공 후 /me API로 사용자 정보 가져오기
     const meBody = await meApi(token);
     const me = meBody?.data;
+
     if (me?.userId) {
       setUser({
         id: Number(me.userId),
@@ -114,6 +135,13 @@ export function AuthProvider({ children }) {
         province: me.province,
         city: me.city,
       });
+
+      if (me.province && me.city) {
+        selectTown({
+          province: me.province,
+          city: me.city,
+        });
+      }
     } else {
       // /me 실패 시 로그인 응답 데이터 사용 (fallback)
       setUser({
@@ -124,6 +152,13 @@ export function AuthProvider({ children }) {
         province: data?.province,
         city: data?.city,
       });
+
+      if (data?.province && data?.city) {
+        selectTown({
+          province: data.province,
+          city: data.city,
+        });
+      }
     }
   };
 
@@ -136,7 +171,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     setAccessTokenState(null);
     clearAccessToken();
-    localStorage.removeItem("selectedTown");
+    clearTown();
   };
 
   return (
