@@ -1,11 +1,20 @@
-const BASE_URL = "http://localhost:8080/api/meetings";
+"use client";
 
-export async function getMeetingList(
-  { page = 0, keyword, category, status, province, city },
-  token
-) {
+import { apiFetch } from "@/app/api/utils/api.js";
+
+/**
+ * 모임 목록 조회
+ * GET /api/meetings
+ */
+export async function getMeetingList({
+  page = 0,
+  keyword,
+  category,
+  status,
+  province,
+  city,
+}) {
   const params = new URLSearchParams();
-
   params.append("page", page);
   params.append("size", 6);
 
@@ -15,228 +24,111 @@ export async function getMeetingList(
   if (province) params.append("province", province);
   if (city) params.append("city", city);
 
-  const url = `${BASE_URL}?${params.toString()}`;
-  console.log("REQUEST URL:", url);
-
-  const res = await fetch(url, {
+  const res = await apiFetch(`/api/meetings?${params.toString()}`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    credentials: "include",
   });
 
-  if (!res.ok) {
-    throw new Error("모임 목록 조회 실패");
-  }
-
-  return res.json();
+  return res;
 }
 
 /**
  * 모임 상세 조회
- * @param {number|string} meetingId
+ * GET /api/meetings/{meetingId}
  */
-export async function getMeetingDetail(meetingId, token) {
-  const res = await fetch(`${BASE_URL}/${meetingId}`, {
+export async function getMeetingDetail(meetingId) {
+  const res = await apiFetch(`/api/meetings/${meetingId}`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    credentials: "include",
   });
 
-  if (!res.ok) {
-    throw new Error("모임 상세 조회 실패");
-  }
-
-  return res.json();
-}
-
-export async function createMeeting(data, token) {
-  const res = await fetch(BASE_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    credentials: "include",
-    body: JSON.stringify(data),
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => null);
-    console.error("모임 생성 실패:", error);
-    throw new Error("모임 생성 실패");
-  }
-
-  return res.json();
-}
-
-export async function updateMeeting(meetingId, data, token) {
-  const res = await fetch(`${BASE_URL}/${meetingId}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => null);
-    console.error("모임 수정 실패:", error);
-    throw new Error("모임 수정 실패");
-  }
-
-  return res.json();
-}
-
-export async function requestJoinMeeting(meetingId, token, message) {
-  const res = await fetch(`${BASE_URL}/${meetingId}/join`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ message }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    const error = new Error("가입 요청 실패");
-    error.response = { data };
-    throw error;
-  }
-
-  return data;
+  return res;
 }
 
 /**
- * 가입 신청 목록 조회 (HOST 전용)
+ * 모임 생성
+ * POST /api/meetings
  */
-export async function getJoinRequests(meetingId, token) {
-  const res = await fetch(`${BASE_URL}/${meetingId}/manage/join-requests`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    credentials: "include",
+export async function createMeeting(data) {
+  return apiFetch("/api/meetings", {
+    method: "POST",
+    body: JSON.stringify(data),
   });
+}
 
-  const data = await res.json();
+/**
+ * 모임 수정
+ * PATCH /api/meetings/{meetingId}
+ */
+export async function updateMeeting(meetingId, data) {
+  return apiFetch(`/api/meetings/${meetingId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
 
-  if (!res.ok) {
-    const error = new Error("가입 신청 목록 조회 실패");
-    error.response = { data };
-    throw error;
-  }
+/**
+ * 모임 가입 신청
+ * POST /api/meetings/{meetingId}/join
+ */
+export async function requestJoinMeeting(meetingId, message) {
+  return apiFetch(`/api/meetings/${meetingId}/join`, {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
+}
 
-  return data;
+/**
+ * 가입 신청 목록 조회
+ * GET /api/meetings/{meetingId}/manage/join-requests
+ */
+export async function getJoinRequests(meetingId) {
+  const res = await apiFetch(
+    `/api/meetings/${meetingId}/manage/join-requests`,
+    { method: "GET" }
+  );
+
+  return res;
 }
 
 /**
  * 가입 신청 승인
+ * POST /api/meetings/{meetingId}/manage/join-requests/{requestId}/approve
  */
-export async function approveJoinRequest(meetingId, requestId, token) {
-  const res = await fetch(
-    `${BASE_URL}/${meetingId}/manage/join-requests/${requestId}/approve`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: "include",
-    }
+export async function approveJoinRequest(meetingId, requestId) {
+  return apiFetch(
+    `/api/meetings/${meetingId}/manage/join-requests/${requestId}/approve`,
+    { method: "POST" }
   );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    const error = new Error("가입 승인 실패");
-    error.response = { data };
-    throw error;
-  }
-
-  return data;
 }
 
 /**
  * 가입 신청 거절
+ * POST /api/meetings/{meetingId}/manage/join-requests/{requestId}/reject
  */
-export async function rejectJoinRequest(meetingId, requestId, token) {
-  const res = await fetch(
-    `${BASE_URL}/${meetingId}/manage/join-requests/${requestId}/reject`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: "include",
-    }
+export async function rejectJoinRequest(meetingId, requestId) {
+  return apiFetch(
+    `/api/meetings/${meetingId}/manage/join-requests/${requestId}/reject`,
+    { method: "POST" }
   );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    const error = new Error("가입 거절 실패");
-    error.response = { data };
-    throw error;
-  }
-
-  return data;
 }
 
 /**
- *    멤버 목록 조회
+ * 모임 멤버 목록 조회
+ * GET /api/meetings/{meetingId}/manage/members
  */
-export async function getMeetingMembers(meetingId, token) {
-  const res = await fetch(`${BASE_URL}/${meetingId}/manage/members`, {
+export async function getMeetingMembers(meetingId) {
+  const res = await apiFetch(`/api/meetings/${meetingId}/manage/members`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    credentials: "include",
   });
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    const error = new Error("멤버 목록 조회 실패");
-    error.response = { data };
-    throw error;
-  }
-
-  return data;
+  return res;
 }
 
 /**
-   멤버 강퇴
+ * 모임 멤버 강퇴
+ * DELETE /api/meetings/{meetingId}/manage/members/{memberId}
  */
-export async function removeMeetingMember(meetingId, memberId, token) {
-  const res = await fetch(
-    `${BASE_URL}/${meetingId}/manage/members/${memberId}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: "include",
-    }
-  );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    const error = new Error("멤버 강퇴 실패");
-    error.response = { data };
-    throw error;
-  }
-
-  return data;
+export async function removeMeetingMember(meetingId, memberId) {
+  return apiFetch(`/api/meetings/${meetingId}/manage/members/${memberId}`, {
+    method: "DELETE",
+  });
 }

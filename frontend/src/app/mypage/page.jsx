@@ -67,8 +67,6 @@ export default function MyPage() {
   const observerRef = useRef(null);
   const isFetchingRef = useRef(false);
 
-  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-
   /* =========================
      현재 앱에서 선택된 지역 문자열
   ========================= */
@@ -95,11 +93,11 @@ export default function MyPage() {
   useEffect(() => {
     if (!user) return;
 
-    getMyPageUser(token)
+    getMyPageUser()
       .then(setMyUser)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [user, token]);
+  }, [user]);
 
   /* =========================
      설정 열고 닫을 때: 체크 초기화(원하면 유지해도 되는데 UX상 초기화가 깔끔)
@@ -177,7 +175,7 @@ export default function MyPage() {
       isFetchingRef.current = true;
       setSectionLoading(true);
 
-      const res = await fetcher({ token, cursor: null });
+      const res = await fetcher({ cursor: null });
 
       setItems(res.data.items || []);
       setCursors((prev) => ({
@@ -209,7 +207,6 @@ export default function MyPage() {
       setSectionLoading(true);
 
       const res = await fetcher({
-        token,
         cursor: cursors[section],
       });
 
@@ -259,7 +256,12 @@ export default function MyPage() {
     };
 
     try {
-      await updateMyProfile(token, payload);
+      await updateMyProfile(payload);
+      setMyUser((prev) => ({
+        ...prev,
+        location: payload.location,
+      }));
+
       alert("회원 정보가 수정되었습니다.");
       setIsSettingOpen(false);
     } catch (e) {
@@ -280,7 +282,7 @@ export default function MyPage() {
     if (!ok) return;
 
     try {
-      await withdrawUser(token, currentPassword);
+      await withdrawUser(currentPassword);
       alert("회원 탈퇴가 완료되었습니다.");
       window.location.href = "/";
     } catch (e) {

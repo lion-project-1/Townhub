@@ -14,9 +14,23 @@ import {
   Trash2,
 } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { deleteQuestion } from "@/app/api/questions";
-import { getQuestion } from "@/app/api/questions";
+import {
+  getAnswers,
+  createAnswer,
+  updateAnswer,
+  deleteAnswer,
+  acceptAnswer,
+  unacceptAnswer,
+} from "@/app/api/answers";
+import {
+  getQuestionData,
+  incrementQuestionViews,
+  deleteQuestion,
+} from "@/app/api/questions";
 
+/* =========================
+   constants
+========================= */
 const CATEGORIES = [
   { label: "맛집", value: "RESTAURANT" },
   { label: "의료", value: "HOSPITAL" },
@@ -27,43 +41,55 @@ const CATEGORIES = [
   { label: "기타", value: "ETC" },
 ];
 
-// 날짜 포맷팅 함수: ISO 8601 형식을 YYYY-MM-DD HH:mm 형식으로 변환
-import {
-  getAnswers,
-  createAnswer,
-  updateAnswer,
-  deleteAnswer,
-  acceptAnswer,
-  unacceptAnswer,
-} from "@/app/api/answers";
-
-// 날짜 포맷팅 함수
+/* =========================
+   utils
+========================= */
 function formatDateTime(dateString) {
   if (!dateString) return "";
-
-  try {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
-  } catch (error) {
-    console.error("날짜 포맷팅 실패:", error);
-    return dateString;
-  }
+  const d = new Date(dateString);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(
+    2,
+    "0"
+  )}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+const formatAnswers = (answersData) =>
+  answersData.map((answer) => {
+    const isAccepted =
+      answer.accepted === true ||
+      answer.accepted === "true" ||
+      answer.isAccepted === true ||
+      answer.isAccepted === "true";
+
+    return {
+      id: answer.id,
+      content: answer.content,
+      isAccepted,
+      author: answer.writerNickname || answer.writer || "익명",
+      writerId: answer.writerId,
+      createdAt: formatDateTime(answer.createdAt),
+      likes: 0,
+    };
+  });
+
+/* =========================
+   page
+========================= */
 export default function QnaDetailPage() {
   const params = useParams();
-  const { user } = useAuth();
   const router = useRouter();
+  const { user } = useAuth();
+
+  const [question, setQuestion] = useState(null);
+  const [answers, setAnswers] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [isLoadingAnswers, setIsLoadingAnswers] = useState(true);
 
   const [answerText, setAnswerText] = useState("");
-  const [answers, setAnswers] = useState([]);
-  const [isLoadingAnswers, setIsLoadingAnswers] = useState(true);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [editingAnswerId, setEditingAnswerId] = useState(null);
   const [editText, setEditText] = useState("");
@@ -71,172 +97,97 @@ export default function QnaDetailPage() {
 
   const isDevMode = process.env.NEXT_PUBLIC_DEV === "true";
 
-  const [question, setQuestion] = useState(null);
-
+  /* =========================
+     fetch (ONE useEffect)
+  ========================= */
   useEffect(() => {
-    async function fetchQuestion() {
+    if (!params.id) return;
+
+    let mounted = true;
+
+    const fetchAll = async () => {
       try {
-        const data = await getQuestion(params.id);
-        setQuestion(data);
+        setLoading(true);
+        setIsLoadingAnswers(true);
+
+        const q = await getQuestionData(params.id);
+
+        incrementQuestionViews(params.id).catch(console.error);
+
+        const a = await getAnswers(params.id);
+
+        if (!mounted) return;
+
+        setQuestion(q);
+        setAnswers(formatAnswers(a));
       } catch (e) {
         console.error(e);
+        if (mounted) {
+          setQuestion(null);
+          setAnswers([]);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          setIsLoadingAnswers(false);
+        }
       }
-    }
-    fetchQuestion();
+    };
+
+    fetchAll();
+
+    return () => {
+      mounted = false;
+    };
   }, [params.id]);
 
-  if (!question) {
-    return <div>로딩중...</div>;
-  }
+  /* =========================
+     early returns (SAFE)
+  ========================= */
+  if (loading) return <div className="p-8">로딩중...</div>;
+  if (!question) return <div className="p-8">존재하지 않는 질문입니다.</div>;
 
+  /* =========================
+     derived values
+  ========================= */
+  const isAuthor = user?.id === question.authorId;
   const categoryLabel =
     CATEGORIES.find((c) => c.value === question.category)?.label ??
     question.category;
 
-  const formattedDate = question.createdAt.replace("T", " ");
-
-  const isAuthor = user?.id === question.authorId;
-
-  const formatAnswers = (answersData) => {
-    return answersData.map((answer) => {
-      const isAccepted =
-        answer.accepted === true ||
-        answer.accepted === "true" ||
-        answer.isAccepted === true ||
-        answer.isAccepted === "true";
-
-      return {
-        id: answer.id,
-        content: answer.content,
-        isAccepted,
-        author: answer.writerNickname || answer.writer || "익명",
-        writerId: answer.writerId,
-        createdAt: formatDateTime(answer.createdAt),
-        likes: 0,
-      };
-    });
-  };
-
+  /* =========================
+     handlers
+  ========================= */
   const refreshAnswers = async () => {
-    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-    const answersData = await getAnswers(params.id, token);
-    setAnswers(formatAnswers(answersData));
+    const data = await getAnswers(params.id);
+    setAnswers(formatAnswers(data));
   };
-
-  useEffect(() => {
-    const fetchAnswers = async () => {
-      try {
-        setIsLoadingAnswers(true);
-        await refreshAnswers();
-      } catch (error) {
-        console.error("답변 목록 조회 실패:", error);
-        setAnswers([]);
-      } finally {
-        setIsLoadingAnswers(false);
-      }
-    };
-
-    if (params.id) fetchAnswers();
-  }, [params.id]);
 
   const handleSubmitAnswer = async (e) => {
     e.preventDefault();
     if (!answerText.trim() || isSubmittingAnswer) return;
 
-    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-
     try {
       setIsSubmittingAnswer(true);
-      await createAnswer(params.id, answerText.trim(), token);
-      alert("답변이 등록되었습니다!");
+      await createAnswer(params.id, answerText.trim());
       setAnswerText("");
       await refreshAnswers();
-    } catch (error) {
-      console.error("답변 등록 실패:", error);
-      alert("답변 등록에 실패했습니다.");
     } finally {
       setIsSubmittingAnswer(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm("정말로 이 질문을 삭제하시겠습니까?")) return;
-
-    try {
-      const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-      await deleteQuestion(params.id, token);
-      alert("질문이 삭제되었습니다.");
-      router.push("/town/qna");
-    } catch (error) {
-      alert("질문 삭제에 실패했습니다.");
-    }
-  };
-
-  const handleEditAnswer = (answerId, currentContent) => {
-    setEditingAnswerId(answerId);
-    setEditText(currentContent);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingAnswerId(null);
-    setEditText("");
+  const handleDeleteQuestion = async () => {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+    await deleteQuestion(params.id);
+    router.push("/town/qna");
   };
 
   const handleSubmitEdit = async (answerId) => {
-    if (!editText.trim()) return;
-
-    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-
-    try {
-      await updateAnswer(answerId, editText.trim(), token);
-      alert("답변이 수정되었습니다.");
-      handleCancelEdit();
-      await refreshAnswers();
-    } catch (error) {
-      alert("답변 수정에 실패했습니다.");
-    }
-  };
-
-  const handleDeleteAnswer = async (answerId) => {
-    if (!confirm("정말로 이 답변을 삭제하시겠습니까?")) return;
-
-    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-
-    try {
-      await deleteAnswer(answerId, token);
-      alert("답변이 삭제되었습니다.");
-      await refreshAnswers();
-    } catch (error) {
-      alert("답변 삭제에 실패했습니다.");
-    }
-  };
-
-  const handleAcceptAnswer = async (answerId) => {
-    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-
-    try {
-      setAcceptingAnswerId(answerId);
-      await acceptAnswer(answerId, token);
-      await refreshAnswers();
-    } catch (error) {
-      alert("답변 채택에 실패했습니다.");
-    } finally {
-      setAcceptingAnswerId(null);
-    }
-  };
-
-  const handleUnacceptAnswer = async (answerId) => {
-    const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-
-    try {
-      setAcceptingAnswerId(answerId);
-      await unacceptAnswer(answerId, token);
-      await refreshAnswers();
-    } catch (error) {
-      alert("답변 채택 취소에 실패했습니다.");
-    } finally {
-      setAcceptingAnswerId(null);
-    }
+    await updateAnswer(answerId, editText.trim());
+    setEditingAnswerId(null);
+    setEditText("");
+    await refreshAnswers();
   };
 
   return (
@@ -255,7 +206,7 @@ export default function QnaDetailPage() {
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3 flex-1">
               <h1 className="text-gray-900">{question.title}</h1>
-              {question.resolved && (
+              {question.isResolved && (
                 <span className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded flex-shrink-0">
                   <CheckCircle className="w-4 h-4" />
                   해결됨
@@ -263,7 +214,7 @@ export default function QnaDetailPage() {
               )}
             </div>
             {isAuthor && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-shrink-0 ml-2">
                 <Link
                   href={`/town/qna/${params.id}/edit`}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
@@ -284,12 +235,12 @@ export default function QnaDetailPage() {
 
           <div className="flex items-center gap-4 mb-6 text-sm text-gray-500">
             <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded">
-              {categoryLabel}
+              {question.category}
             </span>
-            <span>{question.writer}</span>
+            <span>{question.author}</span>
             <span className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
-              {formattedDate}
+              {question.createdAt}
             </span>
             <span className="flex items-center gap-1">
               <TrendingUp className="w-4 h-4" />
@@ -297,15 +248,17 @@ export default function QnaDetailPage() {
             </span>
           </div>
 
-          <p className="text-gray-700 whitespace-pre-wrap">
-            {question.content}
-          </p>
+          <div className="border-t border-gray-200 pt-6">
+            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+              {question.content}
+            </p>
+          </div>
         </div>
 
         {/* Answers */}
         <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6">
-          <h2 className="mb-6 text-gray-900 flex items-center gap-2">
-            <MessageCircle className="w-6 h-6" />
+          <h2 className="mb-6 text-gray-900">
+            <MessageCircle className="inline w-6 h-6 mr-2" />
             답변 {answers.length}개
           </h2>
 
@@ -313,112 +266,158 @@ export default function QnaDetailPage() {
             <div className="text-center py-8 text-gray-500">
               답변을 불러오는 중...
             </div>
+          ) : answers.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              아직 답변이 없습니다.
+            </div>
           ) : (
             <div className="space-y-6">
-              {answers.map((answer) => (
-                <div
-                  key={answer.id}
-                  className={`p-6 rounded-lg border ${
-                    answer.isAccepted
-                      ? "border-green-300 bg-green-50"
-                      : "border-gray-200"
-                  }`}
-                >
-                  {answer.isAccepted && (
-                    <div className="flex items-center gap-2 mb-3 text-green-700">
-                      <CheckCircle className="w-5 h-5" />
-                      <span className="text-sm">채택된 답변</span>
-                    </div>
-                  )}
-
-                  {editingAnswerId === answer.id ? (
-                    <div className="mb-4">
-                      <textarea
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        rows={4}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-2"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleSubmitEdit(answer.id)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-                        >
-                          저장
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="px-4 py-2 border border-gray-300 rounded-lg"
-                        >
-                          취소
-                        </button>
+              {answers.map((answer) => {
+                // 디버깅: isAccepted 값 확인
+                console.log("[Render Answer]", {
+                  id: answer.id,
+                  isAccepted: answer.isAccepted,
+                  type: typeof answer.isAccepted,
+                });
+                return (
+                  <div
+                    key={answer.id}
+                    className={`p-6 rounded-lg border ${
+                      answer.isAccepted
+                        ? "border-green-300 bg-green-50"
+                        : "border-gray-200"
+                    }`}
+                  >
+                    {answer.isAccepted ? (
+                      <div className="flex items-center gap-2 mb-3 text-green-700">
+                        <CheckCircle className="w-5 h-5" />
+                        <span className="text-sm">채택된 답변</span>
                       </div>
-                    </div>
-                  ) : (
-                    <p className="mb-4">{answer.content}</p>
-                  )}
+                    ) : null}
 
-                  <div className="flex justify-between items-center text-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center">
-                        {answer.author[0]}
-                      </div>
-                      <span>{answer.author}</span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {answer.createdAt}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {(isDevMode ||
-                        String(user?.id) === String(answer.writerId)) && (
-                        <>
+                    {editingAnswerId === answer.id ? (
+                      <div className="mb-4">
+                        <textarea
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          rows={4}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                          placeholder="답변 내용을 수정하세요..."
+                        />
+                        <div className="flex gap-2">
                           <button
-                            onClick={() =>
-                              handleEditAnswer(answer.id, answer.content)
-                            }
-                            className="px-2 py-1 text-xs text-blue-600 border border-blue-300 rounded"
+                            onClick={() => handleSubmitEdit(answer.id)}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                           >
-                            수정
+                            저장
                           </button>
                           <button
-                            onClick={() => handleDeleteAnswer(answer.id)}
-                            className="px-2 py-1 text-xs text-red-600 border border-red-300 rounded"
+                            onClick={handleCancelEdit}
+                            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
                           >
-                            삭제
+                            취소
                           </button>
-                        </>
-                      )}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-gray-700 leading-relaxed mb-4">
+                        {answer.content}
+                      </p>
+                    )}
 
-                      {isAuthor && (
-                        <>
-                          {answer.isAccepted ? (
-                            <button
-                              onClick={() => handleUnacceptAnswer(answer.id)}
-                              className="px-2 py-1 text-xs border border-green-300 text-green-700 rounded"
-                            >
-                              채택 취소
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleAcceptAnswer(answer.id)}
-                              className="px-2 py-1 text-xs border border-gray-300 rounded"
-                            >
-                              채택
-                            </button>
-                          )}
-                        </>
-                      )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 text-sm text-gray-600">
+                        <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white">
+                          {answer.author?.[0] || "?"}
+                        </div>
+                        <span>{answer.author || "익명"}</span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {answer.createdAt}
+                        </span>
+                      </div>
 
-                      <button className="flex items-center gap-1 px-2 py-1 border rounded">
-                        <ThumbsUp className="w-4 h-4" />
-                        {answer.likes}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {/* 본인 답변이거나 개발 모드일 때 수정/삭제 버튼 표시 */}
+                        {(() => {
+                          // writerId와 현재 사용자 ID 비교 (타입 변환 고려)
+                          const isMyAnswer =
+                            user?.id &&
+                            answer.writerId &&
+                            (String(user.id) === String(answer.writerId) ||
+                              Number(user.id) === Number(answer.writerId));
+                          const showButtons = isDevMode || isMyAnswer;
+
+                          // 디버깅 로그
+                          console.log("[Button Visibility]", {
+                            answerId: answer.id,
+                            writerId: answer.writerId,
+                            userId: user?.id,
+                            isMyAnswer,
+                            isDevMode,
+                            showButtons,
+                          });
+
+                          return showButtons ? (
+                            <>
+                              <button
+                                onClick={() =>
+                                  handleEditAnswer(answer.id, answer.content)
+                                }
+                                className="px-2 py-1 text-xs text-blue-600 border border-blue-300 rounded hover:bg-blue-50 flex items-center gap-1"
+                                title="수정"
+                              >
+                                <Edit className="w-3 h-3" />
+                                수정
+                              </button>
+                              <button
+                                onClick={() => handleDeleteAnswer(answer.id)}
+                                className="px-2 py-1 text-xs text-red-600 border border-red-300 rounded hover:bg-red-50 flex items-center gap-1"
+                                title="삭제"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                삭제
+                              </button>
+                            </>
+                          ) : null;
+                        })()}
+                        {/* 질문 작성자에게만 채택 버튼 표시 */}
+                        {isAuthor && (
+                          <>
+                            {answer.isAccepted ? (
+                              <button
+                                onClick={() => handleUnacceptAnswer(answer.id)}
+                                disabled={acceptingAnswerId === answer.id}
+                                className="px-3 py-1.5 text-sm text-green-700 bg-green-50 border border-green-300 rounded-lg hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                {acceptingAnswerId === answer.id
+                                  ? "취소 중..."
+                                  : "채택 취소"}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleAcceptAnswer(answer.id)}
+                                disabled={acceptingAnswerId === answer.id}
+                                className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                {acceptingAnswerId === answer.id
+                                  ? "채택 중..."
+                                  : "채택"}
+                              </button>
+                            )}
+                          </>
+                        )}
+                        <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">
+                          <ThumbsUp className="w-4 h-4" />
+                          <span className="text-sm">{answer.likes}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -426,19 +425,20 @@ export default function QnaDetailPage() {
         {/* Answer Form */}
         {user && (
           <div className="bg-white rounded-xl border border-gray-200 p-8">
-            <h2 className="mb-4">답변 작성</h2>
+            <h2 className="mb-4 text-gray-900">답변 작성</h2>
             <form onSubmit={handleSubmitAnswer}>
               <textarea
                 value={answerText}
                 onChange={(e) => setAnswerText(e.target.value)}
                 rows={5}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                placeholder="이웃에게 도움이 되는 답변을 작성해주세요..."
                 required
               />
               <button
                 type="submit"
                 disabled={isSubmittingAnswer}
-                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg"
+                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmittingAnswer ? "등록 중..." : "답변 등록"}
               </button>
@@ -448,10 +448,12 @@ export default function QnaDetailPage() {
 
         {!user && (
           <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-            <p className="mb-4">답변을 작성하려면 로그인이 필요합니다.</p>
+            <p className="text-gray-600 mb-4">
+              답변을 작성하려면 로그인이 필요합니다.
+            </p>
             <Link
               href="/login"
-              className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg"
+              className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               로그인하기
             </Link>

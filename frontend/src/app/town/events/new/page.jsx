@@ -3,11 +3,27 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save } from 'lucide-react';
+import { createEvent } from '@/app/api/events';
+import { useTown } from '@/app/contexts/TownContext';
+
+// 카테고리 한글 -> 백엔드 enum 매핑
+const CATEGORY_MAP = {
+  '축제': 'FESTIVAL',
+  '봉사': 'VOLUNTEER',
+  '문화': 'CULTURE',
+  '체육': 'SPORTS',
+  '교육': 'EDUCATION',
+  '기타': 'ETC',
+  '번개': 'FLASH',
+};
 
 const CATEGORIES = ['축제', '봉사', '문화', '체육', '교육', '기타', '번개'];
 
 export default function EventNewPage() {
   const router = useRouter();
+  const { selectedTown } = useTown();
+  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
+  
   const [formData, setFormData] = useState({
     title: '',
     category: '',
@@ -19,6 +35,7 @@ export default function EventNewPage() {
   });
   const [errors, setErrors] = useState({});
   const [timeWarning, setTimeWarning] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // 오늘 날짜를 YYYY-MM-DD 형식으로 반환
   const getTodayDateString = () => {
@@ -84,8 +101,15 @@ export default function EventNewPage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // 동네 선택 확인
+    if (!selectedTown || !selectedTown.id) {
+      alert('동네를 먼저 선택해주세요.');
+      router.push('/town-select');
+      return;
+    }
     
     // 번개 카테고리 검증
     if (formData.category === '번개') {
@@ -104,7 +128,60 @@ export default function EventNewPage() {
       return;
     }
 
-    router.push('/town/events/1');
+    try {
+      setLoading(true);
+
+      // date + time을 startAt (한국 시간 기준 ISO string)으로 변환
+      const [hours, minutes] = formData.time.split(':').map(Number);
+      const [year, month, day] = formData.date.split('-').map(Number);
+      
+      // 한국 시간대로 Date 객체 생성 (로컬 시간 사용)
+      const startAtDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
+      
+      // 한국 시간을 ISO 형식으로 변환 (시간대 정보 없이)
+      // 형식: YYYY-MM-DDTHH:mm:ss
+      const yearStr = String(year).padStart(4, '0');
+      const monthStr = String(month).padStart(2, '0');
+      const dayStr = String(day).padStart(2, '0');
+      const hoursStr = String(hours).padStart(2, '0');
+      const minutesStr = String(minutes).padStart(2, '0');
+      const startAt = `${yearStr}-${monthStr}-${dayStr}T${hoursStr}:${minutesStr}:00`;
+
+      // 카테고리 한글 -> enum 변환
+      const categoryEnum = CATEGORY_MAP[formData.category];
+      if (!categoryEnum) {
+        alert('올바른 카테고리를 선택해주세요.');
+        return;
+      }
+
+      // API 요청 데이터 구성
+      const payload = {
+        title: formData.title,
+        description: formData.description || '',
+        category: categoryEnum,
+        locationId: selectedTown.id,
+        eventPlace: formData.location,
+        startAt: startAt,
+        capacity: Number(formData.maxParticipants),
+      };
+
+      const result = await createEvent(payload, token);
+
+      // 성공 시 상세 페이지로 이동
+      // 응답 구조: { success: true, code: "SUCCESS", message: "...", data: { eventId: ..., status: ... } }
+      if (result.success && result.data && result.data.eventId) {
+        router.push(`/town/events/${result.data.eventId}`);
+      } else {
+        // 응답 구조가 다를 경우 목록으로 이동
+        router.push('/town/events');
+      }
+    } catch (e) {
+      console.error('이벤트 생성 실패:', e);
+      const errorMessage = e?.response?.data?.message || '이벤트 생성에 실패했습니다.';
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -208,10 +285,10 @@ export default function EventNewPage() {
                 name="maxParticipants"
                 value={formData.maxParticipants}
                 onChange={handleChange}
-                min="1"
-                max="1000"
+                min="2"
+                max="100"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="1-1000"
+                placeholder="2-100"
                 required
               />
             </div>
@@ -238,15 +315,17 @@ export default function EventNewPage() {
               type="button"
               onClick={() => router.back()}
               className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+              disabled={loading}
             >
               취소
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
+              disabled={loading}
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               <Save className="w-5 h-5" />
-              만들기
+              {loading ? '생성 중...' : '만들기'}
             </button>
           </div>
         </form>

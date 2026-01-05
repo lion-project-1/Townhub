@@ -24,8 +24,6 @@ export default function GroupDetailPage() {
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-
   // 가입 메시지 모달 상태
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinMessage, setJoinMessage] = useState("");
@@ -33,18 +31,20 @@ export default function GroupDetailPage() {
   useEffect(() => {
     const loadGroup = async () => {
       try {
-        const result = await getMeetingDetail(params.id, token);
+        const result = await getMeetingDetail(params.id);
         setGroup(result.data);
       } catch (e) {
         console.error(e);
-        router.replace("/404");
+        alert("에러 발생! 콘솔 확인");
+
+        // router.replace("/404");
       } finally {
         setLoading(false);
       }
     };
 
     loadGroup();
-  }, [params.id, router, token]);
+  }, [params.id, router]);
 
   if (loading || authLoading) {
     return <div className="p-8">로딩 중...</div>;
@@ -74,7 +74,7 @@ export default function GroupDetailPage() {
     }
 
     try {
-      await requestJoinMeeting(params.id, token /*, joinMessage */);
+      await requestJoinMeeting(params.id);
       alert("가입 신청이 완료되었습니다.");
       setShowJoinModal(false);
       setJoinMessage("");

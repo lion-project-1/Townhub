@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
-import com.example.backend.domain.MeetingMember;
+import com.example.backend.domain.Meeting;
+import com.example.backend.domain.MeetingJoinRequest;
 import com.example.backend.domain.RefreshToken;
 import com.example.backend.domain.Location;
 import com.example.backend.domain.User;
@@ -9,12 +10,14 @@ import com.example.backend.global.exception.custom.CustomException;
 import com.example.backend.global.exception.custom.ErrorCode;
 import com.example.backend.repository.AnswerRepository;
 import com.example.backend.repository.LocationRepository;
+import com.example.backend.repository.MeetingJoinRequestRepository;
 import com.example.backend.repository.MeetingMemberRepository;
 import com.example.backend.repository.MeetingRepository;
 import com.example.backend.repository.QuestionRepository;
 import com.example.backend.repository.RefreshTokenRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.security.jwt.JwtProvider;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,6 +37,7 @@ public class UserService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final MeetingMemberRepository meetingMemberRepository;
+    private final MeetingJoinRequestRepository meetingJoinRequestRepository;
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
@@ -70,6 +74,7 @@ public class UserService {
         }
 
         refreshTokenRepository.deleteByUserId(user.getId()); // 기존 RefreshToken 제거
+        refreshTokenRepository.flush(); // UNIQUE(token) 충돌 방지: 삭제를 DB에 먼저 반영
 
         String accessToken = jwtProvider.createAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtProvider.createRefreshToken(user.getId());
@@ -95,6 +100,13 @@ public class UserService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public UserMeResponse me(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        return UserMeResponse.from(user);
+    }
+
     @Transactional
     public TokenReissueResult reissue(String refreshToken) {
         RefreshToken oldRefreshToken = refreshTokenRepository.findByToken(refreshToken)
@@ -108,6 +120,7 @@ public class UserService {
 
         // AccessToken 재발급할 때 RefreshToken 도 삭제 후 재발급
         refreshTokenRepository.delete(oldRefreshToken);
+        refreshTokenRepository.flush(); // UNIQUE(token) 충돌 방지: 삭제를 DB에 먼저 반영
 
         User user = userRepository.findById(oldRefreshToken.getUserId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -198,9 +211,20 @@ public class UserService {
 
         checkPassword(currentPassword, user);
 
-        meetingMemberRepository.deleteByUser(user);
+        List<Meeting> meetings = meetingRepository.findMeetingByHost(user);
+
+        for (Meeting meeting : meetings) {
+            meetingJoinRequestRepository.deleteByMeeting(meeting);
+            meetingMemberRepository.deleteByMeeting(meeting);
+        }
+
+        meetingRepository.deleteByHost(user);
+
         answerRepository.deleteByUser(user);
         questionRepository.deleteByUser(user);
+        meetingJoinRequestRepository.deleteByUser(user);
+        meetingMemberRepository.deleteByUser(user);
+
         userRepository.deleteById(userId);
     }
 
@@ -208,5 +232,20 @@ public class UserService {
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new CustomException(ErrorCode.INVALID_PASSWORD);
         }
+    }
+
+    public boolean isEmailAvailable(String email) {
+        if (!StringUtils.hasText(email)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        return !userRepository.existsByEmail(email);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isNicknameAvailable(String nickname) {
+        if (!StringUtils.hasText(nickname)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        return !userRepository.existsByNickname(nickname);
     }
 }

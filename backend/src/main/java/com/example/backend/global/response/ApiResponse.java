@@ -37,6 +37,7 @@ public class ApiResponse<T> {
         return new ApiResponse<>(false, code, message, data);
     }
     public static <T> ApiResponse<T> fail(ErrorCode errorCode) {
-        return new ApiResponse<>(false, errorCode.name(), errorCode.getMessage(), null);
+        // ErrorCode enum의 실제 code(USER_001, TOKEN_003 등)로 내려주도록 통일
+        return new ApiResponse<>(false, errorCode.getCode(), errorCode.getMessage(), null);
     }
 }

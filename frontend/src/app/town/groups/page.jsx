@@ -6,7 +6,7 @@ import { Users, Search, Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getMeetingList } from "@/app/api/meeting";
 import { useTown } from "@/app/contexts/TownContext";
-import { useAuth } from "@/app/contexts/AuthContext"; // ✅ 추가
+import { useAuth } from "@/app/contexts/AuthContext";
 
 const CATEGORIES = [
   { label: "전체", value: null },
@@ -29,7 +29,6 @@ export default function GroupListPage() {
   const searchParams = useSearchParams();
   const { selectedTown } = useTown();
   const { user } = useAuth(); // ✅ 추가
-  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
   /* =========================
      URL 기반 상태
@@ -82,17 +81,14 @@ export default function GroupListPage() {
       try {
         setLoading(true);
 
-        const result = await getMeetingList(
-          {
-            page,
-            category: selectedCategory,
-            status: selectedStatus,
-            keyword: searchKeyword,
-            province: selectedTown.province,
-            city: selectedTown.city,
-          },
-          token
-        );
+        const result = await getMeetingList({
+          page,
+          category: selectedCategory,
+          status: selectedStatus,
+          keyword: searchKeyword,
+          province: selectedTown.province,
+          city: selectedTown.city,
+        });
 
         setGroups(result.data.content);
         setTotalPages(result.data.page.totalPages);
@@ -104,14 +100,7 @@ export default function GroupListPage() {
     };
 
     loadGroups();
-  }, [
-    page,
-    selectedCategory,
-    selectedStatus,
-    searchKeyword,
-    selectedTown,
-    token,
-  ]);
+  }, [page, selectedCategory, selectedStatus, searchKeyword, selectedTown]);
 
   /* =========================
      검색 실행

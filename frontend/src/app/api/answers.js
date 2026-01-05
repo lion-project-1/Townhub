@@ -1,5 +1,8 @@
-// Next.js API Route를 통한 프록시 사용 (CORS 문제 해결)
-const BASE_URL = "/api";
+import { authFetch } from "@/app/api/authFetch";
+import { getApiBaseUrl } from "@/app/api/authApi";
+
+const API_BASE_URL = getApiBaseUrl();
+const BASE_URL = `${API_BASE_URL}/api`;
 
 /**
  * ApiResponse 형식 처리 헬퍼 함수
@@ -41,20 +44,14 @@ async function handleApiResponse(res) {
  * 로그인 연동 전 단계이므로, 환경변수에서 임시 토큰을 읽어 사용합니다.
  * 추후 로그인/인증 연동 시 이 부분은 제거 또는 변경 예정입니다.
  */
-export async function getAnswers(questionId, token) {
+export async function getAnswers(questionId) {
   try {
-    // 개발용 임시 처리: 토큰이 없으면 환경변수에서 가져옴
-    // 추후 로그인/인증 연동 시 제거 또는 변경 예정
-    const authToken = token || process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-    
-    // Next.js API Route를 통한 프록시 사용
     const url = `${BASE_URL}/questions/${questionId}/answers`;
     
-    const res = await fetch(url, {
+    const res = await authFetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
       },
     });
 
@@ -84,21 +81,16 @@ export async function getAnswers(questionId, token) {
  * 로그인 연동 전 단계이므로, 환경변수에서 임시 토큰을 읽어 사용합니다.
  * 추후 로그인/인증 연동 시 이 부분은 제거 또는 변경 예정입니다.
  */
-export async function createAnswer(questionId, content, token) {
+export async function createAnswer(questionId, content) {
   try {
-    // 개발용 임시 처리: 토큰이 없으면 환경변수에서 가져옴
-    // 추후 로그인/인증 연동 시 제거 또는 변경 예정
-    const authToken = token || process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-    
-    // Next.js API Route를 통한 프록시 사용
+    // Next.js API Route 대신 백엔드 직접 호출 + authFetch로 통일
     const url = `${BASE_URL}/questions/${questionId}/answers`;
     const body = { content };
     
-    const res = await fetch(url, {
+    const res = await authFetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify(body),
     });
@@ -122,21 +114,15 @@ export async function createAnswer(questionId, content, token) {
  * 로그인 연동 전 단계이므로, 환경변수에서 임시 토큰을 읽어 사용합니다.
  * 추후 로그인/인증 연동 시 이 부분은 제거 또는 변경 예정입니다.
  */
-export async function updateAnswer(answerId, content, token) {
+export async function updateAnswer(answerId, content) {
   try {
-    // 개발용 임시 처리: 토큰이 없으면 환경변수에서 가져옴
-    // 추후 로그인/인증 연동 시 제거 또는 변경 예정
-    const authToken = token || process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-    
-    // Next.js API Route를 통한 프록시 사용
     const url = `${BASE_URL}/answers/${answerId}`;
     const body = { content };
     
-    const res = await fetch(url, {
+    const res = await authFetch(url, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify(body),
     });
@@ -159,20 +145,12 @@ export async function updateAnswer(answerId, content, token) {
  * 로그인 연동 전 단계이므로, 환경변수에서 임시 토큰을 읽어 사용합니다.
  * 추후 로그인/인증 연동 시 이 부분은 제거 또는 변경 예정입니다.
  */
-export async function deleteAnswer(answerId, token) {
+export async function deleteAnswer(answerId) {
   try {
-    // 개발용 임시 처리: 토큰이 없으면 환경변수에서 가져옴
-    // 추후 로그인/인증 연동 시 제거 또는 변경 예정
-    const authToken = token || process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-    
-    // Next.js API Route를 통한 프록시 사용
     const url = `${BASE_URL}/answers/${answerId}`;
     
-    const res = await fetch(url, {
+    const res = await authFetch(url, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
     });
 
     await handleApiResponse(res);
@@ -193,20 +171,12 @@ export async function deleteAnswer(answerId, token) {
  * 로그인 연동 전 단계이므로, 환경변수에서 임시 토큰을 읽어 사용합니다.
  * 추후 로그인/인증 연동 시 이 부분은 제거 또는 변경 예정입니다.
  */
-export async function acceptAnswer(answerId, token) {
+export async function acceptAnswer(answerId) {
   try {
-    // 개발용 임시 처리: 토큰이 없으면 환경변수에서 가져옴
-    // 추후 로그인/인증 연동 시 제거 또는 변경 예정
-    const authToken = token || process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-    
-    // Next.js API Route를 통한 프록시 사용
     const url = `${BASE_URL}/answers/${answerId}/accept`;
     
-    const res = await fetch(url, {
+    const res = await authFetch(url, {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
     });
 
     await handleApiResponse(res);
@@ -227,20 +197,12 @@ export async function acceptAnswer(answerId, token) {
  * 로그인 연동 전 단계이므로, 환경변수에서 임시 토큰을 읽어 사용합니다.
  * 추후 로그인/인증 연동 시 이 부분은 제거 또는 변경 예정입니다.
  */
-export async function unacceptAnswer(answerId, token) {
+export async function unacceptAnswer(answerId) {
   try {
-    // 개발용 임시 처리: 토큰이 없으면 환경변수에서 가져옴
-    // 추후 로그인/인증 연동 시 제거 또는 변경 예정
-    const authToken = token || process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-    
-    // Next.js API Route를 통한 프록시 사용
     const url = `${BASE_URL}/answers/${answerId}/unaccept`;
     
-    const res = await fetch(url, {
+    const res = await authFetch(url, {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
     });
 
     await handleApiResponse(res);

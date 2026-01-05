@@ -36,16 +36,13 @@ export default function GroupManagePage() {
   const [requests, setRequests] = useState([]);
   const [members, setMembers] = useState([]);
 
-  // 임시 로컬 토큰 (추후 AuthContext로 교체 권장)
-  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
-
   /* ======================
      가입 신청 목록 조회
      ====================== */
   useEffect(() => {
     if (activeTab !== "requests") return;
 
-    getJoinRequests(meetingId, token)
+    getJoinRequests(meetingId)
       .then((res) => {
         if (res.success) {
           setRequests(res.data);
@@ -62,7 +59,7 @@ export default function GroupManagePage() {
      멤버 목록 최초 로딩 (중요)
      ====================== */
   useEffect(() => {
-    getMeetingMembers(meetingId, token)
+    getMeetingMembers(meetingId)
       .then((res) => {
         if (res.success) {
           setMembers(res.data);
@@ -80,7 +77,7 @@ export default function GroupManagePage() {
      ====================== */
   const handleApprove = async (requestId) => {
     try {
-      const res = await approveJoinRequest(meetingId, requestId, token);
+      const res = await approveJoinRequest(meetingId, requestId);
       if (res.success) {
         // 신청 목록에서 제거
         setRequests((prev) => prev.filter((r) => r.requestId !== requestId));
@@ -96,7 +93,7 @@ export default function GroupManagePage() {
 
   const handleReject = async (requestId) => {
     try {
-      const res = await rejectJoinRequest(meetingId, requestId, token);
+      const res = await rejectJoinRequest(meetingId, requestId);
       if (res.success) {
         setRequests((prev) => prev.filter((r) => r.requestId !== requestId));
       } else {
@@ -111,7 +108,7 @@ export default function GroupManagePage() {
     if (!confirm("정말로 이 멤버를 내보내시겠습니까?")) return;
 
     try {
-      const res = await removeMeetingMember(meetingId, userId, token);
+      const res = await removeMeetingMember(meetingId, userId);
       if (res.success) {
         // 즉시 UI 반영
         setMembers((prev) => prev.filter((m) => m.userId !== userId));
@@ -125,7 +122,7 @@ export default function GroupManagePage() {
 
   const refreshMembers = async () => {
     try {
-      const res = await getMeetingMembers(meetingId, token);
+      const res = await getMeetingMembers(meetingId);
       if (res.success) {
         setMembers(res.data);
       }

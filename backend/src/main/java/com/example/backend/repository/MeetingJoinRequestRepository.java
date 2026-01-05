@@ -16,4 +16,8 @@ public interface MeetingJoinRequestRepository extends JpaRepository<MeetingJoinR
 
     Optional<MeetingJoinRequest> findByIdAndMeeting(Long id, Meeting meeting);
 
+    void deleteByUser(User user);
+
+    void deleteByMeeting(Meeting meeting);
+
 }

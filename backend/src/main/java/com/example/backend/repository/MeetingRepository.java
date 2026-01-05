@@ -1,5 +1,6 @@
 package com.example.backend.repository;
 
+import com.example.backend.domain.User;
 import com.example.backend.dto.MyMeetingItemDto;
 import java.util.List;
 import java.util.Optional;
@@ -22,5 +23,9 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long>, Meeting
 	Optional<Meeting> findDetailWithMembersById(@Param("meetingId") Long meetingId);
 
 	int countByHostId(Long userId);
+
+	List<Meeting> findMeetingByHost(User user);
+
+	void deleteByHost(User user);
 
 }

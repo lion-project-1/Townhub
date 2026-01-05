@@ -14,7 +14,6 @@ export default function TownSelectPage() {
 
   const { selectTown } = useTown();
   const router = useRouter();
-  const token = process.env.NEXT_PUBLIC_LOCAL_ACCESS_TOKEN;
 
   const handleSearch = async () => {
     if (searchQuery.trim().length < 2) {
@@ -23,11 +22,11 @@ export default function TownSelectPage() {
       return;
     }
 
-    setHasSearched(true); // ⭐ 검색 시도 표시
+    setHasSearched(true);
     setLoading(true);
 
     try {
-      const result = await searchTowns(searchQuery, token);
+      const result = await searchTowns(searchQuery.trim());
       setTowns(Array.isArray(result.data) ? result.data : []);
     } catch (e) {
       console.error(e);
