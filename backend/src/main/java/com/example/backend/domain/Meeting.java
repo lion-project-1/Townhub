@@ -43,6 +43,7 @@ public class Meeting extends BaseEntity{
     @Column(length = 1000)
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MeetingCategory category;
 
@@ -106,6 +107,18 @@ public class Meeting extends BaseEntity{
             validateCapacity(capacity);
             this.capacity = capacity;
         }
+    }
+
+    public void changeStatus(MeetingStatus newStatus) {
+        if (this.status == newStatus) {
+            return;
+        }
+
+        if (this.status == MeetingStatus.DELETED) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        this.status = newStatus;
     }
 
 

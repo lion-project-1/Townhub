@@ -6,6 +6,7 @@ import com.example.backend.domain.QMeetingMember;
 import com.example.backend.dto.MeetingListResponse;
 import com.example.backend.dto.MeetingSearchCondition;
 import com.example.backend.dto.MyMeetingItemDto;
+import com.example.backend.dto.PopularMeetingDto;
 import com.example.backend.enums.MeetingCategory;
 import com.example.backend.enums.MeetingStatus;
 import com.querydsl.core.types.Projections;
@@ -146,6 +147,52 @@ public class MeetingQueryRepositoryImpl implements MeetingQueryRepository {
                 .limit(size + 1)
                 .fetch();
     }
+
+
+    @Override
+    public List<PopularMeetingDto> findPopularMeetings(Long townId, int limit) {
+        QMeeting m = QMeeting.meeting;
+        QMeetingMember mm = QMeetingMember.meetingMember;
+
+
+        return queryFactory
+                .select(Projections.constructor(
+                        PopularMeetingDto.class,
+                        m.id,
+                        m.title,
+                        m.category.stringValue(),
+                        mm.count().intValue(),
+                        m.capacity
+                ))
+                .from(m)
+                .leftJoin(mm).on(mm.meeting.eq(m))
+                .where(
+                        m.location.id.eq(townId),
+                        m.status.eq(MeetingStatus.RECRUITING)
+                )
+                .groupBy(m.id)
+                .orderBy(mm.count().desc())
+                .limit(limit)
+                .fetch();
+    }
+
+    @Override
+    public long countActiveMeetings(Long townId) {
+        QMeeting m = QMeeting.meeting;
+
+        return queryFactory
+                .select(m.count())
+                .from(m)
+                .where(
+                        m.location.id.eq(townId),
+                        m.status.in(
+                                MeetingStatus.RECRUITING,
+                                MeetingStatus.ACTIVE
+                        )
+                )
+                .fetchOne();
+    }
+
 
     private BooleanExpression cursorCondition(Long cursor, QMeeting m) {
         if (cursor == null) {

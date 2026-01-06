@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import com.example.backend.domain.User;
+import com.example.backend.dto.ChangeMeetingStatusRequest;
 import com.example.backend.dto.MeetingCreateRequest;
 import com.example.backend.dto.MeetingCreateResponse;
 import com.example.backend.dto.MeetingDetailResponse;
@@ -89,6 +90,16 @@ public class MeetingController {
         );
 
         return ResponseEntity.ok(ApiResponse.success("모임이 변경되었습니다.", null));
+    }
+
+    @PatchMapping("/{meetingId}/status")
+    public ApiResponse<Void> changeMeetingStatus(
+            @PathVariable Long meetingId,
+            @AuthenticationPrincipal User user,
+            @RequestBody @Valid ChangeMeetingStatusRequest request
+    ) {
+        meetingService.changeStatus(meetingId, user.getId(), request);
+        return ApiResponse.success("모임 상태가 변경되었습니다.");
     }
 
     @PostMapping("/{meetingId}/join")

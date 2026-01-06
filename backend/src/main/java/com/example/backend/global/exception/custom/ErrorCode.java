@@ -61,6 +61,7 @@ public enum ErrorCode {
 	MEETING_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "MEETING-008", "모임 가입 신청을 찾을 수 없습니다."),
 	MEETING_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEETING-009", "해당 멤버를 모임에서 조회할 수 없습니다."),
 	MEETING_HOST_CANNOT_BE_REMOVED(HttpStatus.BAD_REQUEST, "MEETING-010", "방장은 내보낼 수 없습니다."),
+	MEETING_RECRUITING_CLOSED(HttpStatus.BAD_REQUEST,"MEETING-011", "더이상 멤버를 받지 않습니다."),
 
 	// Event,
 	INVALID_EVENT_CAPACITY(HttpStatus.BAD_REQUEST, "EVENT-001", "이벤트의 인원 범위는 2~100명 사이입니다."),
