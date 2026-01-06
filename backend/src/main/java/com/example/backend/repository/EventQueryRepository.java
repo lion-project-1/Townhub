@@ -1,6 +1,7 @@
 package com.example.backend.repository;
 
 import com.example.backend.dto.MyEventItemDto;
+import com.example.backend.dto.UpcomingEventDto;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -20,4 +21,9 @@ public interface EventQueryRepository {
 	List<EventCalendarResponse> findEventListForCalendar(EventCalendarSearchCondition condition);
 
 	List<MyEventItemDto> findMyEvents(Long userId, Long cursor, int size);
+
+	long countActiveEvents(Long townId);
+
+	List<UpcomingEventDto> findUpcomingEvents(Long townId, int limit);
+
 }

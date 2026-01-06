@@ -43,6 +43,7 @@ public class Meeting extends BaseEntity{
     @Column(length = 1000)
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MeetingCategory category;
 
