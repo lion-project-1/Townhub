@@ -16,23 +16,22 @@ export default function TownDashboard() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 대시보드 조회
+  // ✅ 리다이렉트 + 데이터 로딩은 useEffect에서만
   useEffect(() => {
-    if (!selectedTown?.id) return;
+    if (!selectedTown) {
+      router.replace("/town-select");
+      return;
+    }
+
+    if (!selectedTown.id) return;
 
     getTownDashboard(selectedTown.id)
       .then(setDashboard)
       .finally(() => setLoading(false));
-  }, [selectedTown]);
+  }, [selectedTown, router]);
 
-  // 🔹 동네 선택 안 된 경우
-  if (!selectedTown) {
-    router.replace("/town-select");
-    return null;
-  }
-
-  // 🔹 로딩 중
-  if (loading || !dashboard) {
+  // ✅ render 중 router 변경 제거
+  if (!selectedTown || loading || !dashboard) {
     return null;
   }
 

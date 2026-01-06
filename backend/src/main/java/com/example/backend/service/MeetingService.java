@@ -4,6 +4,8 @@ import static com.example.backend.mapper.MeetingMapper.toMeeting;
 import static com.example.backend.mapper.MeetingMapper.toMeetingDetailResponse;
 import static com.example.backend.mapper.MeetingMapper.*;
 
+import com.example.backend.dto.ChangeMeetingStatusRequest;
+import com.example.backend.enums.MeetingStatus;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -155,11 +157,13 @@ public class MeetingService {
     @Transactional
     public void approveJoinRequest(Long meetingId, Long requestId, Long hostUserId) {
         Meeting meeting = getMeeting(meetingId);
-        User host = getUser(hostUserId);
 
         validateHost(meetingId, hostUserId);
 
-        log.info("여기 체크");
+        if (meeting.getStatus() == MeetingStatus.ACTIVE) {
+            throw new CustomException(ErrorCode.MEETING_RECRUITING_CLOSED);
+        }
+
 
         checkMeetingCapacity(meeting);
 
@@ -175,6 +179,12 @@ public class MeetingService {
         request.approve();
 
         meetingMemberRepository.save(MeetingMember.createMember(meeting, request.getUser()));
+
+        int afterJoinSize = meeting.getMembers().size() + 1;
+        if (afterJoinSize >= meeting.getCapacity()) {
+            meeting.changeStatus(MeetingStatus.ACTIVE);
+        }
+
     }
 
 
@@ -226,6 +236,25 @@ public class MeetingService {
         }
 
         meetingMemberRepository.delete(member);
+    }
+
+    @Transactional
+    public void changeStatus(
+            Long meetingId,
+            long userId,
+            ChangeMeetingStatusRequest request) {
+
+        Meeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
+
+        validateHost(meetingId, userId);
+
+        if (request.getStatus() == MeetingStatus.RECRUITING
+                && meeting.getMembers().size() >= meeting.getCapacity()) {
+            throw new CustomException(ErrorCode.MEETING_IS_FULL);
+        }
+
+        meeting.changeStatus(request.getStatus());
     }
 
     private Meeting getMeeting(Long meetingId) {

@@ -133,3 +133,9 @@ export async function removeMeetingMember(meetingId, memberId) {
   });
 }
 
+export async function changeMeetingStatus(meetingId, status) {
+  return apiFetch(`/api/meetings/${meetingId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}

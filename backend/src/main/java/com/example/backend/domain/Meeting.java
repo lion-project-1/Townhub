@@ -109,6 +109,18 @@ public class Meeting extends BaseEntity{
         }
     }
 
+    public void changeStatus(MeetingStatus newStatus) {
+        if (this.status == newStatus) {
+            return;
+        }
+
+        if (this.status == MeetingStatus.DELETED) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        this.status = newStatus;
+    }
+
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
