@@ -86,7 +86,8 @@ public class SecurityConfig {
         // 허용 도메인
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:3000",
-                "http://127.0.0.1:3000"
+                "http://127.0.0.1:3000",
+                "http://15.165.160.251:3000"
         ));
 
         // 허용 HTTP 메서드
