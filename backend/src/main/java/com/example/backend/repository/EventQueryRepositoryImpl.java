@@ -1,7 +1,9 @@
 package com.example.backend.repository;
 
 import com.example.backend.dto.MyEventItemDto;
+import com.example.backend.dto.UpcomingEventDto;
 import com.querydsl.jpa.JPAExpressions;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -244,6 +246,56 @@ public class EventQueryRepositoryImpl implements EventQueryRepository {
 				.limit(size + 1)
 				.fetch();
 	}
+
+	@Override
+	public List<UpcomingEventDto> findUpcomingEvents(Long townId, int limit) {
+		QEvent e = QEvent.event;
+		QEventMember em = QEventMember.eventMember;
+
+		return queryFactory
+				.select(Projections.constructor(
+						UpcomingEventDto.class,
+						e.id,
+						e.title,
+						e.startAt,
+						em.count().intValue(),
+						e.capacity
+				))
+				.from(e)
+				.leftJoin(em).on(em.event.eq(e))
+				.where(
+						e.location.id.eq(townId),
+						e.status.eq(EventStatus.RECRUITING),
+						e.startAt.after(LocalDateTime.now())
+				)
+				.groupBy(e.id)
+				.orderBy(e.startAt.asc())
+				.limit(limit)
+				.fetch();
+	}
+
+	@Override
+	public long countActiveEvents(Long townId) {
+		QEvent e = QEvent.event;
+
+		LocalDateTime startOfMonth =
+				LocalDate.now().withDayOfMonth(1).atStartOfDay();
+
+		LocalDateTime startOfNextMonth =
+				startOfMonth.plusMonths(1);
+
+		return queryFactory
+				.select(e.count())
+				.from(e)
+				.where(
+						e.location.id.eq(townId),
+						e.status.ne(EventStatus.CANCELED),
+						e.startAt.goe(startOfMonth),
+						e.startAt.lt(startOfNextMonth)
+				)
+				.fetchOne();
+	}
+
 
 	private BooleanExpression cursorCondition(Long cursor, QEvent e) {
 		if (cursor == null) {

@@ -45,7 +45,8 @@ public class SecurityConfig {
                                 "/api/events/flash",
                                 "/api/questions",
                                 "/api/events/*",
-                                "/api/questions/*"
+                                "/api/questions/*",
+                                "/api/towns/*/dashboard"
                         ).permitAll()
                         .requestMatchers(
                                 "/api/users/login",

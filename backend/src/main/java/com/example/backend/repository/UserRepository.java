@@ -1,5 +1,6 @@
 package com.example.backend.repository;
 
+import com.example.backend.domain.Location;
 import com.example.backend.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,4 +13,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByNickname(String nickname);
 
     Optional<User> findByEmail(String email);
+    Long countUserByLocation(Location location);
 }

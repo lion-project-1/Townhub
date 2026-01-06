@@ -52,9 +52,6 @@ export default function MainPage() {
 
       {/* Features */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <h2 className="text-center mb-12 text-gray-900">
-          우리동네에서 할 수 있는 일
-        </h2>
         <div className="grid md:grid-cols-3 gap-8">
           <FeatureCard
             icon={<Users className="w-6 h-6 text-blue-600" />}
@@ -81,38 +78,6 @@ export default function MainPage() {
           >
             동네에 대한 궁금한 점을 질문하고, 이웃들의 경험과 지식을 나눠보세요
           </FeatureCard>
-        </div>
-      </section>
-
-      {/* Community Preview */}
-      <section className="bg-gray-100 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-center mb-12 text-gray-900">
-            활발한 동네 커뮤니티
-          </h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { name: "강남구", members: 1234, groups: 45 },
-              { name: "마포구", members: 987, groups: 38 },
-              { name: "성동구", members: 756, groups: 29 },
-            ].map((town) => (
-              <div
-                key={town.name}
-                className="bg-white p-6 rounded-lg border border-gray-200"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <h3 className="text-gray-900">{town.name}</h3>
-                </div>
-                <div className="flex gap-4 text-sm text-gray-600">
-                  <span>회원 {town.members.toLocaleString()}명</span>
-                  <span>모임 {town.groups}개</span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 

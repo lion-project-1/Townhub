@@ -3,7 +3,9 @@ package com.example.backend.repository;
 import com.example.backend.domain.QLocation;
 import com.example.backend.domain.QQuestion;
 import com.example.backend.domain.QAnswer;
+import com.example.backend.domain.QUser;
 import com.example.backend.domain.Question;
+import com.example.backend.dto.LatestQuestionDto;
 import com.example.backend.dto.MyQuestionItemDto;
 import com.example.backend.dto.QuestionSearchRequest;
 import com.example.backend.enums.QuestionCategory;
@@ -130,5 +132,39 @@ public class QuestionQueryRepositoryImpl implements QuestionQueryRepository {
 
     private BooleanExpression ltCursor(Long cursor, QQuestion q) {
         return cursor == null ? null : q.id.lt(cursor);
+    }
+
+    @Override
+    public List<LatestQuestionDto> findLatestQuestions(Long townId, int limit) {
+        QQuestion q = QQuestion.question;
+        QUser u = QUser.user;
+
+        return queryFactory
+                .select(Projections.constructor(
+                        LatestQuestionDto.class,
+                        q.id,
+                        q.title,
+                        u.nickname,
+                        q.createdAt
+                ))
+                .from(q)
+                .join(q.user, u)
+                .where(q.location.id.eq(townId))
+                .orderBy(q.createdAt.desc())
+                .limit(limit)
+                .fetch();
+    }
+
+    @Override
+    public long countByTown(Long townId) {
+        QQuestion q = QQuestion.question;
+
+        return queryFactory
+                .select(q.count())
+                .from(q)
+                .where(
+                        q.location.id.eq(townId)
+                )
+                .fetchOne();
     }
 }
