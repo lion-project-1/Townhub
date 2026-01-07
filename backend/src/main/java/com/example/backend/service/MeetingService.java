@@ -258,7 +258,7 @@ public class MeetingService {
     }
 
     private Meeting getMeeting(Long meetingId) {
-        return meetingRepository.findById(meetingId)
+        return meetingRepository.findDetailWithMembersById(meetingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
     }
 
