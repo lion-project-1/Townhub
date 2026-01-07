@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Save, Trash2 } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { updateQuestion, deleteQuestion } from "@/app/api/questions";
+import {
+  getQuestionData,
+  updateQuestion,
+  deleteQuestion,
+} from "@/app/api/questions";
 
 const CATEGORIES = [
   { label: "맛집", value: "RESTAURANT" },
@@ -20,27 +24,62 @@ export default function QnaEditPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  //const { user, token } = useAuth();
-  const token = process.env.NEXT_PUBLIC_DEV_ACCESS_TOKEN;
 
-  const isMyQuestion =
-    params.id === "1" || params.id === "100" || params.id === "999";
-  const isAuthor = isMyQuestion && user?.id;
-  // const isAuthor = true;
+  const questionId = params.id;
 
-  useEffect(() => {
-    if (!isAuthor) {
-      router.push(`/town/qna/${params.id}`);
-    }
-  }, [isAuthor, router, params.id]);
+  const [question, setQuestion] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
-    title: "이 근처 맛있는 한식당 추천해주세요",
-    category: "RESTAURANT",
-    content:
-      "가족 모임을 위해 괜찮은 한식당을 찾고 있습니다. 10명 정도 수용 가능하고, 주차도 편한 곳이면 좋겠어요. 추천 부탁드립니다!",
+    title: "",
+    category: "",
+    content: "",
   });
 
+  /* =========================
+     질문 데이터 로딩
+  ========================= */
+  useEffect(() => {
+    if (!questionId) return;
+
+    const fetchQuestion = async () => {
+      try {
+        const q = await getQuestionData(questionId);
+        setQuestion(q);
+
+        setFormData({
+          title: q.title,
+          category: q.category,
+          content: q.content,
+        });
+      } catch (e) {
+        console.error(e);
+        router.replace("/town/qna");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuestion();
+  }, [questionId, router]);
+
+  /* =========================
+     권한 체크
+  ========================= */
+  const isAuthor =
+    user?.id &&
+    question?.authorId &&
+    String(user.id) === String(question.authorId);
+
+  useEffect(() => {
+    if (!loading && question && !isAuthor) {
+      router.replace(`/town/qna/${questionId}`);
+    }
+  }, [loading, question, isAuthor, router, questionId]);
+
+  /* =========================
+     handlers
+  ========================= */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -53,29 +92,24 @@ export default function QnaEditPage() {
     e.preventDefault();
 
     try {
-      await updateQuestion(
-        params.id,
-        {
-          questionCategory: formData.category, // 🔥 enum 그대로 전달
-          title: formData.title,
-          content: formData.content,
-        },
-        token
-      );
+      await updateQuestion(questionId, {
+        questionCategory: formData.category,
+        title: formData.title,
+        content: formData.content,
+      });
 
       alert("질문이 수정되었습니다.");
-      router.push(`/town/qna/${params.id}`);
+      router.push(`/town/qna/${questionId}`);
     } catch (error) {
       alert(error.message || "질문 수정에 실패했습니다.");
     }
   };
 
   const handleDelete = async () => {
-    console.log("삭제 버튼 클릭됨");
     if (!confirm("정말로 이 질문을 삭제하시겠습니까?")) return;
 
     try {
-      await deleteQuestion(params.id, token);
+      await deleteQuestion(questionId);
       alert("질문이 삭제되었습니다.");
       router.push("/town/qna");
     } catch (error) {
@@ -83,8 +117,20 @@ export default function QnaEditPage() {
     }
   };
 
-  if (!isAuthor) return null;
+  /* =========================
+     early return
+  ========================= */
+  if (loading) {
+    return <div className="p-8">로딩 중...</div>;
+  }
 
+  if (!question || !isAuthor) {
+    return null;
+  }
+
+  /* =========================
+     render
+  ========================= */
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -112,7 +158,6 @@ export default function QnaEditPage() {
                 value={formData.title}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="질문을 간단히 요약해주세요"
                 required
               />
             </div>
@@ -127,9 +172,9 @@ export default function QnaEditPage() {
                 required
               >
                 <option value="">선택하세요</option>
-                {CATEGORIES.map((category) => (
-                  <option key={category.value} value={category.value}>
-                    {category.label}
+                {CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
                   </option>
                 ))}
               </select>
@@ -143,7 +188,6 @@ export default function QnaEditPage() {
                 onChange={handleChange}
                 rows={10}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="궁금한 내용을 자세히 작성해주세요"
                 required
               />
             </div>
