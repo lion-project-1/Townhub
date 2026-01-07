@@ -48,6 +48,8 @@ public class SecurityConfig {
                                 "/api/questions/*",
                                 "/api/towns/*/dashboard"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/questions/*/views"
+                                ).permitAll()
                         .requestMatchers(
                                 "/api/users/login",
                                 "/api/users/signup",
