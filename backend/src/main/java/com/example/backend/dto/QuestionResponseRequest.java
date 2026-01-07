@@ -32,7 +32,7 @@ public class QuestionResponseRequest {
         this.id = question.getId();
         this.title = question.getTitle();
         this.content = question.getContent();
-        this.authorId = question.getId();
+        this.authorId = question.getUser().getId();
         this.writer = question.getUser().getNickname();
         this.category = question.getQuestionCategory();
         this.views = question.getViewCount();          // 또는 랜덤/고정값

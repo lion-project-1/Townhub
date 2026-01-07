@@ -150,6 +150,8 @@ export default function QnaDetailPage() {
   /* =========================
      derived values
   ========================= */
+  console.log("PARAMS ID", params.id, typeof params.id);
+
   const isAuthor = user?.id === question.authorId;
   const categoryLabel =
     CATEGORIES.find((c) => c.value === question.category)?.label ??
